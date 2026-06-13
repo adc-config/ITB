@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Editorial Hub</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue:    #007AFF;
+    --green:   #34C759;
+    --red:     #FF3B30;
+    --orange:  #FF9500;
+    --purple:  #5856D6;
+    --bg:      #F2F2F7;
+    --card:    #FFFFFF;
+    --border:  rgba(0,0,0,0.07);
+    --label:   #8E8E93;
+    --text:    #1C1C1E;
+    --sidebar: rgba(255,255,255,0.88);
+    --r:       14px;
+    --font:    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; font-size: 14px; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: 220px; min-width: 220px; background: var(--sidebar);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 24px 0 16px; z-index: 10;
+  }
+  .sidebar-brand { padding: 0 18px 18px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+  .sidebar-brand .logo { font-size: 17px; font-weight: 800; color: var(--blue); }
+  .sidebar-brand .sub { font-size: 11px; color: var(--label); margin-top: 2px; }
+  .nav-section-label { font-size: 11px; font-weight: 600; color: var(--label); letter-spacing: .06em; text-transform: uppercase; padding: 6px 18px 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; margin: 1px 8px; border-radius: 10px;
+    cursor: pointer; transition: background .12s, color .12s;
+    font-size: 14px; font-weight: 400; color: var(--text); user-select: none;
+  }
+  .nav-item:hover { background: rgba(0,0,0,0.05); }
+  .nav-item.active { background: var(--blue); color: #fff; font-weight: 600; }
+  .nav-item .icon { font-size: 16px; width: 22px; text-align: center; }
+  .nav-badge {
+    margin-left: auto; background: var(--red); color: #fff;
+    border-radius: 20px; font-size: 11px; font-weight: 700;
+    padding: 1px 7px; min-width: 20px; text-align: center;
+  }
+  .sidebar-footer { margin-top: auto; padding: 12px 18px; border-top: 1px solid var(--border); font-size: 12px; color: var(--label); line-height: 1.9; }
+  .sync-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-right: 5px; }
+  .sync-dot.syncing { background: var(--orange); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* ── Main ── */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  #header {
+    padding: 18px 28px 14px; border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,.75); backdrop-filter: blur(16px);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  #header .title { font-size: 21px; font-weight: 700; }
+  #header .date { font-size: 13px; color: var(--label); }
+  #content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+  /* ── Cards ── */
+  .card { background: var(--card); border-radius: var(--r); padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04); margin-bottom: 14px; }
+  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+  .divider { height: 1px; background: var(--bg); margin: 12px 0; }
+
+  /* ── Buttons ── */
+  .btn { padding: 8px 16px; border-radius: 10px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; font-family: var(--font); transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-secondary { background: var(--bg); color: var(--blue); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 8px; }
+
+  /* ── Inputs ── */
+  input[type=text], input[type=number], input[type=date], select, textarea {
+    width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #E5E5EA;
+    font-size: 14px; font-family: var(--font); outline: none; background: #fff; color: var(--text);
+    transition: border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--blue); }
+  .field { margin-bottom: 13px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--label); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+
+  /* ── Grid ── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+  /* ── Tags & Badges ── */
+  .tag { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.35);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; backdrop-filter: blur(4px);
+  }
+  .modal {
+    background: #fff; border-radius: 20px; padding: 26px; width: 430px; max-width: 92vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,.18); max-height: 90vh; overflow-y: auto;
+  }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-header .modal-title { font-size: 17px; font-weight: 700; }
+  .modal-close { background: var(--bg); border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+
+  /* ── Account row ── */
+  .account-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--bg); border-radius: 10px; margin-bottom: 8px; }
+  .account-num { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+  .account-info { flex: 1; min-width: 0; }
+  .account-info .name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .account-info .meta { font-size: 12px; color: var(--label); margin-top: 2px; }
+
+  /* ── Editor card ── */
+  .editor-avatar { width: 44px; height: 44px; border-radius: 12px; background: #007AFF18; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: var(--blue); flex-shrink: 0; }
+
+  /* ── Invoice ── */
+  .invoice-line { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 10px; margin-bottom: 6px; }
+  .invoice-total { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: #F0F7FF; border-radius: 12px; }
+
+  /* ── Rate pills ── */
+  .rate-pill { padding: 10px 14px; background: var(--bg); border-radius: 10px; }
+  .rate-pill .rate-label { font-weight: 600; font-size: 13px; }
+  .rate-pill .rate-reels { font-size: 12px; color: var(--label); margin-top: 2px; }
+  .rate-pill .rate-amount { font-size: 17px; font-weight: 700; color: var(--green); margin-top: 4px; }
+
+  /* ── Cluster chip ── */
+  .cluster-chip { padding: 12px 16px; border-radius: var(--r); margin: 0 0 10px 0; background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; padding: 48px 20px; color: var(--label); font-size: 14px; }
+  .empty .empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+  /* ── Setup screen ── */
+  #setup-screen {
+    position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999;
+  }
+  .setup-card { background: #fff; border-radius: 20px; padding: 36px; width: 480px; max-width: 92vw; box-shadow: 0 20px 60px rgba(0,0,0,.12); }
+  .setup-logo { font-size: 32px; font-weight: 800; color: var(--blue); margin-bottom: 6px; }
+  .setup-sub { color: var(--label); font-size: 14px; margin-bottom: 28px; }
+  .setup-step { display: flex; gap: 12px; margin-bottom: 18px; align-items: flex-start; }
+  .setup-num { width: 26px; height: 26px; border-radius: 50%; background: var(--blue); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .setup-step-text { font-size: 13px; line-height: 1.6; color: var(--text); }
+  .setup-step-text a { color: var(--blue); }
+  .setup-step-text code { background: var(--bg); padding: 1px 6px; border-radius: 5px; font-size: 12px; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #1C1C1E; color: #fff; padding: 10px 20px; border-radius: 20px;
+    font-size: 13px; font-weight: 500; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 9999;
+  }
+  #toast.show { opacity: 1; }
+
+  /* ── Urgent pulse ── */
+  .urgent-row { border-left: 3px solid var(--red); }
+  .extra-row { border-left: 3px solid var(--blue); }
+
+  /* ── Checkbox ── */
+  .check-row { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
+  .check-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--red); }
+
+  /* ── Scrollbar ── */
+  #content::-webkit-scrollbar { width: 6px; }
+  #content::-webkit-scrollbar-track { background: transparent; }
+  #content::-webkit-scrollbar-thumb { background: #C7C7CC; border-radius: 3px; }
+
+  @media (max-width: 640px) {
+    #sidebar { display: none; }
+    #content { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Setup screen (shown until Firebase is configured) -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div class="setup-logo">Editorial Hub</div>
+    <div class="setup-sub">One-time setup — takes about 3 minutes</div>
+
+    <div class="setup-step">
+      <div class="setup-num">1</div>
+      <div class="setup-step-text">
+        Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → click <strong>Add project</strong> → name it anything (e.g. <em>editorial-hub</em>) → disable Google Analytics → <strong>Create project</strong>.
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-num">2</div>
+      <div class="setup-step-text">
+        Inside the project → click <strong>Build → Realtime Database</strong> → <strong>Create database</strong> → choose any location → start in <strong>Test mode</strong> → Enable.
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-num">3</div>
+      <div class="setup-step-text">
+        Go to <strong>Project Settings</strong> (gear icon) → scroll to <em>Your apps</em> → click the <strong>&lt;/&gt;</strong> Web icon → register app → copy the <code>firebaseConfig</code> object values into the fields below.
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:20px">
+      <div class="field"><label>API Key</label><input type="text" id="cfg-apiKey" placeholder="AIzaSy..." /></div>
+      <div class="field"><label>Auth Domain</label><input type="text" id="cfg-authDomain" placeholder="project.firebaseapp.com" /></div>
+      <div class="field"><label>Database URL</label><input type="text" id="cfg-dbUrl" placeholder="https://project-default-rtdb.firebaseio.com" /></div>
+      <div class="field"><label>Project ID</label><input type="text" id="cfg-projectId" placeholder="my-project-id" /></div>
+      <div class="field"><label>Storage Bucket</label><input type="text" id="cfg-storageBucket" placeholder="project.appspot.com" /></div>
+      <div class="field"><label>Messaging Sender ID</label><input type="text" id="cfg-messagingSenderId" placeholder="123456789" /></div>
+      <div class="field"><label>App ID</label><input type="text" id="cfg-appId" placeholder="1:123:web:abc" /></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveConfig()">Connect & Launch →</button>
+    <p style="font-size:12px;color:var(--label);margin-top:10px;text-align:center">Your config is saved in your browser. Free Firebase tier supports up to 100 simultaneous users.</p>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">Editorial Hub</div>
+    <div class="sub">Transparency Board</div>
+  </div>
+  <div class="nav-section-label">Management</div>
+  <div class="nav-item active" onclick="switchTab('editors')" id="nav-editors">
+    <span class="icon">👤</span> Editors
+  </div>
+  <div class="nav-item" onclick="switchTab('accounts')" id="nav-accounts">
+    <span class="icon">📁</span> Accounts
+  </div>
+  <div class="nav-item" onclick="switchTab('extras')" id="nav-extras">
+    <span class="icon">⚡</span> Extra Tasks
+    <span class="nav-badge" id="urgent-badge" style="display:none">0</span>
+  </div>
+  <div class="nav-item" onclick="switchTab('invoices')" id="nav-invoices">
+    <span class="icon">🧾</span> Invoices
+  </div>
+  <div class="sidebar-footer">
+    <div><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Live sync on</span></div>
+    <div id="footer-editors">— editors</div>
+    <div id="footer-accounts">— accounts</div>
+    <div id="footer-clusters">— clusters</div>
+  </div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <div id="header">
+    <div class="title" id="header-title">👤 Editors</div>
+    <div class="date" id="header-date"></div>
+  </div>
+  <div id="content"></div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Modal container -->
+<div id="modal-root"></div>
+
+<script>
+// ── Rate types ──────────────────────────────────────────────────────────────
+const RATE_TYPES = [
+  { id: "week1_2",      label: "Week 1–2",        reels: 7,  rate: 2.50 },
+  { id: "week3",        label: "Week 3",           reels: 14, rate: 4.00 },
+  { id: "post_schedule",label: "Post Schedule",    reels: 21, rate: 6.00 },
+  { id: "full_ops",     label: "Full Operations",  reels: 56, rate: 12.00 },
+];
+
+// ── State ───────────────────────────────────────────────────────────────────
+let DB = null;
+let state = { editors:{}, creators:{}, accounts:{}, clusters:{}, assignments:{}, extras:{} };
+let currentTab = "editors";
+
+// ── Firebase config storage ─────────────────────────────────────────────────
+function saveConfig() {
+  const cfg = {
+    apiKey:            document.getElementById("cfg-apiKey").value.trim(),
+    authDomain:        document.getElementById("cfg-authDomain").value.trim(),
+    databaseURL:       document.getElementById("cfg-dbUrl").value.trim(),
+    projectId:         document.getElementById("cfg-projectId").value.trim(),
+    storageBucket:     document.getElementById("cfg-storageBucket").value.trim(),
+    messagingSenderId: document.getElementById("cfg-messagingSenderId").value.trim(),
+    appId:             document.getElementById("cfg-appId").value.trim(),
+  };
+  if (!cfg.apiKey || !cfg.databaseURL) { toast("Please fill in at least API Key and Database URL"); return; }
+  localStorage.setItem("eh_firebase_cfg", JSON.stringify(cfg));
+  initFirebase(cfg);
+}
+
+function initFirebase(cfg) {
+  try {
+    const app = firebase.initializeApp(cfg);
+    DB = firebase.database();
+    document.getElementById("setup-screen").style.display = "none";
+    listenAll();
+  } catch(e) {
+    toast("Firebase error: " + e.message);
+    console.error(e);
+  }
+}
+
+// ── Firebase listeners ──────────────────────────────────────────────────────
+function listenAll() {
+  setSyncing(true);
+  DB.ref("/").on("value", snap => {
+    const data = snap.val() || {};
+    state.editors    = data.editors    || {};
+    state.creators   = data.creators   || {};
+    state.accounts   = data.accounts   || {};
+    state.clusters   = data.clusters   || {};
+    state.assignments= data.assignments|| {};
+    state.extras     = data.extras     || {};
+    setSyncing(false);
+    updateFooter();
+    updateUrgentBadge();
+    render();
+  });
+}
+
+function setSyncing(on) {
+  const dot = document.getElementById("sync-dot");
+  const lbl = document.getElementById("sync-label");
+  if (on) { dot.className = "sync-dot syncing"; lbl.textContent = "Syncing…"; }
+  else     { dot.className = "sync-dot";         lbl.textContent = "Live sync on"; }
+}
+
+// ── DB helpers ──────────────────────────────────────────────────────────────
+function uid() { return DB.ref().push().key; }
+function set(path, val)    { setSyncing(true); return DB.ref(path).set(val); }
+function remove(path)      { setSyncing(true); return DB.ref(path).remove(); }
+function update(path, val) { setSyncing(true); return DB.ref(path).update(val); }
+
+// ── Tab switching ───────────────────────────────────────────────────────────
+const TAB_LABELS = { editors:"👤 Editors", accounts:"📁 Accounts", extras:"⚡ Extra Tasks", invoices:"🧾 Invoices" };
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+  document.getElementById("nav-" + tab).classList.add("active");
+  document.getElementById("header-title").textContent = TAB_LABELS[tab];
+  render();
+}
+
+function render() {
+  if (currentTab === "editors")  renderEditors();
+  if (currentTab === "accounts") renderAccounts();
+  if (currentTab === "extras")   renderExtras();
+  if (currentTab === "invoices") renderInvoices();
+}
+
+// ── Footer ──────────────────────────────────────────────────────────────────
+function updateFooter() {
+  document.getElementById("footer-editors").textContent  = Object.keys(state.editors).length  + " editors";
+  document.getElementById("footer-accounts").textContent = Object.keys(state.accounts).length + " accounts";
+  document.getElementById("footer-clusters").textContent = Object.keys(state.clusters).length + " clusters";
+}
+function updateUrgentBadge() {
+  const urgentCount = Object.values(state.extras).filter(t => t.urgent).length;
+  const badge = document.getElementById("urgent-badge");
+  badge.style.display = urgentCount ? "inline-block" : "none";
+  badge.textContent = urgentCount;
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function rateType(id)   { return RATE_TYPES.find(t => t.id === id) || RATE_TYPES[0]; }
+function editorName(id) { return (state.editors[id] || {}).name || "Unknown"; }
+function creatorName(id){ return (state.creators[id] || {}).name || "Unknown"; }
+function clusterFor(num) {
+  return Object.values(state.clusters).find(c => num >= c.range[0] && num <= c.range[1]) || null;
+}
+function tagStyle(color) { return `background:${color}22;color:${color};border:1px solid ${color}44;`; }
+function initials(name)  { return name ? name[0].toUpperCase() : "?"; }
+function fmt(n) { return "$" + Number(n).toFixed(2); }
+
+function toast(msg, dur=2800) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), dur);
+}
+
+// ── Modal ───────────────────────────────────────────────────────────────────
+function openModal(html, onSubmit) {
+  const root = document.getElementById("modal-root");
+  root.innerHTML = `<div class="modal-overlay" id="modal-overlay"><div class="modal">${html}</div></div>`;
+  document.getElementById("modal-overlay").addEventListener("click", e => {
+    if (e.target.id === "modal-overlay") closeModal();
+  });
+  if (onSubmit) {
+    const btn = document.getElementById("modal-submit");
+    if (btn) btn.addEventListener("click", onSubmit);
+  }
+  const first = root.querySelector("input,select");
+  if (first) setTimeout(() => first.focus(), 50);
+}
+function closeModal() { document.getElementById("modal-root").innerHTML = ""; }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EDITORS TAB
+// ══════════════════════════════════════════════════════════════════════════════
+function renderEditors() {
+  const editors = Object.entries(state.editors);
+  let html = `
+    <div class="row-between" style="margin-bottom:20px">
+      <div>
+        <div style="font-size:18px;font-weight:700">Editors</div>
+        <div style="font-size:13px;color:var(--label);margin-top:3px">Your content editing team</div>
+      </div>
+      <button class="btn btn-primary" onclick="addEditorModal()">+ Add Editor</button>
+    </div>`;
+
+  if (!editors.length) {
+    html += `<div class="card empty"><div class="empty-icon">👤</div>No editors yet — add your first one.</div>`;
+  }
+
+  editors.forEach(([eid, editor]) => {
+    const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
+    const myAccounts = myAssignments.map(a => state.accounts[a.accountId]).filter(Boolean);
+    const weeklyTotal = myAccounts.reduce((s, ac) => s + rateType(ac.type).rate, 0);
+    const urgentCount = Object.values(state.extras).filter(t => t.editorId === eid && t.urgent).length;
+
+    let tagsHtml = "";
+    myAccounts.slice(0, 6).forEach(ac => {
+      const cl = clusterFor(ac.number);
+      const rt = rateType(ac.type);
+      const col = cl ? cl.color : "#8E8E93";
+      tagsHtml += `<span class="tag" style="${tagStyle(col)}">#${ac.number} ${rt.label}</span>`;
+    });
+    if (myAccounts.length > 6) tagsHtml += `<span class="tag" style="background:var(--bg);color:var(--label)">+${myAccounts.length - 6} more</span>`;
+
+    html += `
+      <div class="card">
+        <div class="row-between">
+          <div class="row">
+            <div class="editor-avatar">${initials(editor.name)}</div>
+            <div>
+              <div style="font-weight:600;font-size:15px">${editor.name}
+                ${urgentCount ? `<span class="badge" style="background:#FF3B3018;color:var(--red);margin-left:6px">🔴 ${urgentCount} urgent</span>` : ""}
+              </div>
+              <div style="font-size:13px;color:var(--label);margin-top:2px">
+                ${myAccounts.length} account${myAccounts.length !== 1 ? "s" : ""} &nbsp;·&nbsp;
+                <span style="color:var(--green);font-weight:600">${fmt(weeklyTotal)}/wk</span>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="removeEditor('${eid}')">Remove</button>
+        </div>
+        ${tagsHtml ? `<div class="row" style="margin-top:12px;gap:6px">${tagsHtml}</div>` : ""}
+      </div>`;
+  });
+
+  document.getElementById("content").innerHTML = html;
+}
+
+function addEditorModal() {
+  openModal(`
+    <div class="modal-header">
+      <span class="modal-title">Add Editor</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="field"><label>Full Name</label>
+      <input type="text" id="m-name" placeholder="e.g. Sarah Johnson" />
+    </div>
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-submit">Add Editor</button>
+    </div>`,
+    () => {
+      const name = document.getElementById("m-name").value.trim();
+      if (!name) return;
+      const id = uid();
+      set(`/editors/${id}`, { name }).then(() => { toast("Editor added"); closeModal(); });
+    }
+  );
+}
+
+function removeEditor(eid) {
+  if (!confirm("Remove this editor? Their assignments and tasks will also be removed.")) return;
+  const batch = {};
+  batch[`/editors/${eid}`] = null;
+  Object.entries(state.assignments).forEach(([k, a]) => { if (a.editorId === eid) batch[`/assignments/${k}`] = null; });
+  Object.entries(state.extras).forEach(([k, t])     => { if (t.editorId === eid)  batch[`/extras/${k}`] = null; });
+  DB.ref().update(batch).then(() => toast("Editor removed"));
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ACCOUNTS TAB
+// ══════════════════════════════════════════════════════════════════════════════
+function renderAccounts() {
+  let html = `
+    <!-- Clusters section -->
+    <div class="row-between" style="margin-bottom:12px">
+      <div style="font-size:18px;font-weight:700">Account Clusters</div>
+      <button class="btn btn-primary" onclick="addClusterModal()">+ Add Cluster</button>
+    </div>
+    <div class="row" style="margin-bottom:24px;gap:10px;flex-wrap:wrap">`;
+
+  const clusters = Object.entries(state.clusters);
+  if (!clusters.length) html += `<span style="color:var(--label);font-size:14px">No clusters yet.</span>`;
+  clusters.forEach(([cid, cl]) => {
+    const count = Object.values(state.accounts).filter(a => a.number >= cl.range[0] && a.number <= cl.range[1]).length;
+    html += `
+      <div class="cluster-chip" style="border-left:4px solid ${cl.color};min-width:150px">
+        <div style="font-weight:700;color:${cl.color};font-size:15px">${cl.name}</div>
+        <div style="font-size:12px;color:var(--label);margin-top:2px">Accounts #${cl.range[0]}–#${cl.range[1]}</div>
+        <div style="font-size:13px;margin-top:2px">${count} account${count !== 1 ? "s" : ""}</div>
+        <button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="removeCluster('${cid}')">Remove</button>
+      </div>`;
+  });
+
+  html += `</div>
+    <!-- Accounts section -->
+    <div class="row-between" style="margin-bottom:12px">
+      <div style="font-size:18px;font-weight:700">Accounts</div>
+      <button class="btn btn-primary" onclick="addAccountModal()">+ Add Account</button>
+    </div>`;
+
+  const accounts = Object.entries(state.accounts).sort((a,b) => a[1].number - b[1].number);
+  if (!accounts.length) {
+    html += `<div class="card empty"><div class="empty-icon">📁</div>No accounts yet.</div>`;
+  }
+
+  accounts.forEach(([acid, ac]) => {
+    const cl  = clusterFor(ac.number);
+    const rt  = rateType(ac.type);
+    const col = cl ? cl.color : "#8E8E93";
+    const assignment = Object.values(state.assignments).find(a => a.accountId === acid);
+    const assignedEditor = assignment ? state.editors[assignment.editorId] : null;
+
+    html += `
+      <div class="account-row">
+        <div class="account-num" style="background:${col}20;color:${col}">#${ac.number}</div>
+        <div class="account-info">
+          <div class="name">${creatorName(ac.creatorId)}
+            ${cl ? `<span class="tag" style="${tagStyle(col)};margin-left:6px">${cl.name}</span>` : ""}
+          </div>
+          <div class="meta">
+            ${rt.label} · !${rt.reels} reels ·
+            <span style="color:var(--green);font-weight:600">${fmt(rt.rate)}/wk</span>
+            ${assignedEditor ? `· <strong>${assignedEditor.name}</strong>` : `· <span style="color:var(--orange)">Unassigned</span>`}
+          </div>
+        </div>
+        <div class="row" style="gap:6px">
+          <button class="btn btn-secondary btn-sm" onclick="assignModal('${acid}','${assignment ? assignment.editorId : ""}')">
+            ${assignedEditor ? "Reassign" : "Assign"}
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="removeAccount('${acid}')">×</button>
+        </div>
+      </div>`;
+  });
+
+  // Rate reference
+  html += `
+    <div class="card" style="margin-top:20px">
+      <div class="card-title">Rate Reference</div>
+      <div class="grid2">`;
+  RATE_TYPES.forEach(t => {
+    html += `
+      <div class="rate-pill">
+        <div class="rate-label">${t.label}</div>
+        <div class="rate-reels">!${t.reels} reels</div>
+        <div class="rate-amount">${fmt(t.rate)}/wk</div>
+      </div>`;
+  });
+  html += `</div></div>`;
+
+  document.getElementById("content").innerHTML = html;
+}
+
+function addClusterModal() {
+  openModal(`
+    <div class="modal-header">
+      <span class="modal-title">Add Cluster</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="field"><label>Cluster Name</label><input type="text" id="m-cname" placeholder="e.g. Cluster C" /></div>
+    <div class="grid2">
+      <div class="field"><label>From Account #</label><input type="number" id="m-cstart" placeholder="1" /></div>
+      <div class="field"><label>To Account #</label><input type="number" id="m-cend" placeholder="5" /></div>
+    </div>
+    <div class="field"><label>Colour</label>
+      <div class="row"><input type="color" id="m-ccolor" value="#007AFF" style="width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px" />
+      <span style="font-size:13px;color:var(--label)">Pick a colour for this cluster</span></div>
+    </div>
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-submit">Add Cluster</button>
+    </div>`,
+    () => {
+      const name  = document.getElementById("m-cname").value.trim();
+      const start = parseInt(document.getElementById("m-cstart").value);
+      const end   = parseInt(document.getElementById("m-cend").value);
+      const color = document.getElementById("m-ccolor").value;
+      if (!name || isNaN(start) || isNaN(end)) return;
+      const id = uid();
+      set(`/clusters/${id}`, { name, range: [start, end], color }).then(() => { toast("Cluster added"); closeModal(); });
+    }
+  );
+}
+
+function removeCluster(cid) {
+  if (!confirm("Remove this cluster?")) return;
+  remove(`/clusters/${cid}`).then(() => toast("Cluster removed"));
+}
+
+function addAccountModal() {
+  const editorsOpts = Object.entries(state.editors).map(([id,e]) => `<option value="${id}">${e.name}</option>`).join("");
+  const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}">${t.label} — !${t.reels} reels · ${fmt(t.rate)}/wk</option>`).join("");
+  openModal(`
+    <div class="modal-header">
+      <span class="modal-title">Add Account</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Account Number</label><input type="number" id="m-anum" placeholder="e.g. 6" /></div>
+      <div class="field"><label>Creator Name</label><input type="text" id="m-creator" placeholder="e.g. @brandname" /></div>
+    </div>
+    <div class="field"><label>Account Type</label><select id="m-atype">${typeOpts}</select></div>
+    <div class="field"><label>Assign Editor (optional)</label>
+      <select id="m-aeditor"><option value="">— Assign later —</option>${editorsOpts}</select>
+    </div>
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-submit">Add Account</button>
+    </div>`,
+    () => {
+      const num     = parseInt(document.getElementById("m-anum").value);
+      const creator = document.getElementById("m-creator").value.trim();
+      const type    = document.getElementById("m-atype").value;
+      const edId    = document.getElementById("m-aeditor").value;
+      if (!creator || isNaN(num)) return;
+
+      // find or create creator
+      let creatorId = Object.entries(state.creators).find(([,c]) => c.name.toLowerCase() === creator.toLowerCase())?.[0];
+      const doCreate = (cid) => {
+        const aid = uid();
+        const batch = {};
+        batch[`/accounts/${aid}`] = { number: num, creatorId: cid, type };
+        if (edId) batch[`/assignments/${uid()}`] = { editorId: edId, accountId: aid };
+        DB.ref().update(batch).then(() => { toast("Account added"); closeModal(); });
+      };
+      if (creatorId) { doCreate(creatorId); }
+      else {
+        creatorId = uid();
+        set(`/creators/${creatorId}`, { name: creator }).then(() => doCreate(creatorId));
+      }
+    }
+  );
+}
+
+function removeAccount(acid) {
+  if (!confirm("Remove this account?")) return;
+  const batch = { [`/accounts/${acid}`]: null };
+  Object.entries(state.assignments).forEach(([k,a]) => { if (a.accountId === acid) batch[`/assignments/${k}`] = null; });
+  DB.ref().update(batch).then(() => toast("Account removed"));
+}
+
+function assignModal(acid, currentEditorId) {
+  const opts = Object.entries(state.editors).map(([id,e]) =>
+    `<option value="${id}" ${id === currentEditorId ? "selected" : ""}>${e.name}</option>`).join("");
+  openModal(`
+    <div class="modal-header">
+      <span class="modal-title">Assign Editor</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="field"><label>Select Editor</label>
+      <select id="m-editor"><option value="">— Choose editor —</option>${opts}</select>
+    </div>
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-submit">Assign</button>
+    </div>`,
+    () => {
+      const edId = document.getElementById("m-editor").value;
+      if (!edId) return;
+      // remove existing assignment for this account
+      const existing = Object.entries(state.assignments).find(([,a]) => a.accountId === acid);
+      const batch = {};
+      if (existing) batch[`/assignments/${existing[0]}`] = null;
+      const newKey = uid();
+      batch[`/assignments/${newKey}`] = { editorId: edId, accountId: acid };
+      DB.ref().update(batch).then(() => { toast("Editor assigned"); closeModal(); });
+    }
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EXTRA TASKS TAB
+// ══════════════════════════════════════════════════════════════════════════════
+function renderExtras() {
+  const tasks = Object.entries(state.extras).sort((a,b) => (b[1].urgent?1:0) - (a[1].urgent?1:0));
+
+  let html = `
+    <div class="row-between" style="margin-bottom:20px">
+      <div>
+        <div style="font-size:18px;font-weight:700">Extra & Urgent Tasks</div>
+        <div style="font-size:13px;color:var(--label);margin-top:3px">Additional work beyond regular accounts</div>
+      </div>
+      <button class="btn btn-primary" onclick="addExtraModal()">+ Add Task</button>
+    </div>`;
+
+  if (!tasks.length) {
+    html += `<div class="card empty"><div class="empty-icon">⚡</div>No extra tasks logged yet.</div>`;
+  }
+
+  tasks.forEach(([tid, task]) => {
+    const edName = editorName(task.editorId);
+    const rowClass = task.urgent ? "urgent-row" : "extra-row";
+    html += `
+      <div class="card ${rowClass}" style="padding:14px 18px">
+        <div class="row-between">
+          <div style="flex:1;min-width:0">
+            <div class="row" style="margin-bottom:4px">
+              ${task.urgent ? `<span class="badge" style="background:#FF3B3018;color:var(--red)">🔴 URGENT</span>` : `<span class="badge" style="background:#007AFF12;color:var(--blue)">Extra</span>`}
+              <span style="font-weight:600;font-size:15px">${task.description}</span>
+            </div>
+            <div style="font-size:13px;color:var(--label)">
+              Editor: <strong>${edName}</strong> &nbsp;·&nbsp; ${task.date}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:12px">
+            <div style="font-size:19px;font-weight:700;color:var(--green)">${fmt(task.amount)}</div>
+            <button class="btn btn-danger btn-sm" style="margin-top:6px" onclick="removeExtra('${tid}')">Remove</button>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  // Summary by editor
+  const editors = Object.entries(state.editors);
+  if (editors.length && tasks.length) {
+    html += `<div class="card" style="margin-top:6px"><div class="card-title">Summary by Editor</div>`;
+    editors.forEach(([eid, editor]) => {
+      const edTasks = tasks.filter(([,t]) => t.editorId === eid);
+      if (!edTasks.length) return;
+      const total = edTasks.reduce((s,[,t]) => s + Number(t.amount), 0);
+      html += `
+        <div class="row-between" style="padding:9px 0;border-bottom:1px solid var(--bg)">
+          <div><span style="font-weight:600">${editor.name}</span>
+            <span style="font-size:13px;color:var(--label);margin-left:8px">${edTasks.length} task${edTasks.length!==1?"s":""}</span>
+          </div>
+          <span style="font-weight:700;color:var(--green)">${fmt(total)}</span>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById("content").innerHTML = html;
+}
+
+function addExtraModal() {
+  const opts = Object.entries(state.editors).map(([id,e]) => `<option value="${id}">${e.name}</option>`).join("");
+  const today = new Date().toISOString().split("T")[0];
+  openModal(`
+    <div class="modal-header">
+      <span class="modal-title">Add Extra / Urgent Task</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="field"><label>Editor</label>
+      <select id="m-teditor"><option value="">— Select editor —</option>${opts}</select>
+    </div>
+    <div class="field"><label>Task Description</label>
+      <input type="text" id="m-tdesc" placeholder="e.g. Emergency reel revision for @brand" />
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Amount ($)</label><input type="number" id="m-tamt" step="0.01" placeholder="0.00" /></div>
+      <div class="field"><label>Date</label><input type="date" id="m-tdate" value="${today}" /></div>
+    </div>
+    <label class="check-row" style="margin-bottom:16px">
+      <input type="checkbox" id="m-turgent" />
+      <span style="color:var(--red)">🔴 Mark as Urgent</span>
+    </label>
+    <div class="row" style="justify-content:flex-end;gap:8px">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-submit">Add Task</button>
+    </div>`,
+    () => {
+      const editorId    = document.getElementById("m-teditor").value;
+      const description = document.getElementById("m-tdesc").value.trim();
+      const amount      = parseFloat(document.getElementById("m-tamt").value);
+      const date        = document.getElementById("m-tdate").value;
+      const urgent      = document.getElementById("m-turgent").checked;
+      if (!editorId || !description || isNaN(amount)) return;
+      const id = uid();
+      set(`/extras/${id}`, { editorId, description, amount, date, urgent })
+        .then(() => { toast("Task added"); closeModal(); });
+    }
+  );
+}
+
+function removeExtra(tid) {
+  if (!confirm("Remove this task?")) return;
+  remove(`/extras/${tid}`).then(() => toast("Task removed"));
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INVOICES TAB
+// ══════════════════════════════════════════════════════════════════════════════
+function renderInvoices() {
+  const editors = Object.entries(state.editors);
+
+  // week label persisted in localStorage per-device (cosmetic only)
+  const weekLabel = localStorage.getItem("eh_weeklabel") ||
+    "Week of " + new Date().toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" });
+
+  let grandTotal = 0;
+  const invoiceBlocks = editors.map(([eid, editor]) => {
+    const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
+    const myAccounts = myAssignments.map(a => state.accounts[a.accountId]).filter(Boolean);
+    const acTotal = myAccounts.reduce((s, ac) => s + rateType(ac.type).rate, 0);
+
+    const myExtras = Object.values(state.extras).filter(t => t.editorId === eid);
+    const exTotal  = myExtras.reduce((s, t) => s + Number(t.amount), 0);
+    const total    = acTotal + exTotal;
+    grandTotal    += total;
+
+    let acLines = "";
+    myAccounts.forEach(ac => {
+      const cl  = clusterFor(ac.number);
+      const rt  = rateType(ac.type);
+      const col = cl ? cl.color : "#8E8E93";
+      acLines += `
+        <div class="invoice-line" style="background:var(--bg)">
+          <div class="row">
+            <span class="tag" style="${tagStyle(col)}">#${ac.number}</span>
+            <div>
+              <div style="font-weight:500;font-size:14px">${creatorName(ac.creatorId)}</div>
+              <div style="font-size:12px;color:var(--label)">${rt.label} · !${rt.reels} reels</div>
+            </div>
+          </div>
+          <span style="font-weight:600;color:var(--green)">${fmt(rt.rate)}</span>
+        </div>`;
+    });
+
+    let exLines = "";
+    myExtras.forEach(task => {
+      exLines += `
+        <div class="invoice-line" style="background:${task.urgent ? "#FFF0EE" : "var(--bg)"}">
+          <div>
+            <div class="row">
+              ${task.urgent ? `<span class="badge" style="background:#FF3B3018;color:var(--red);font-size:10px">URGENT</span>` : ""}
+              <span style="font-weight:500">${task.description}</span>
+            </div>
+            <div style="font-size:12px;color:var(--label)">${task.date}</div>
+          </div>
+          <span style="font-weight:600;color:var(--orange)">${fmt(task.amount)}</span>
+        </div>`;
+    });
+
+    return `
+      <div class="card" style="margin-bottom:20px">
+        <div class="row-between" style="margin-bottom:14px">
+          <div class="row">
+            <div class="editor-avatar">${initials(editor.name)}</div>
+            <div>
+              <div style="font-size:17px;font-weight:700">${editor.name}</div>
+              <div style="font-size:13px;color:var(--label)">${weekLabel}</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:28px;font-weight:800">${fmt(total)}</div>
+            <div style="font-size:12px;color:var(--label)">Total Due</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+
+        ${myAccounts.length ? `
+          <div style="font-size:11px;font-weight:600;color:var(--label);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">
+            Accounts (${myAccounts.length})
+          </div>
+          ${acLines}
+          <div style="display:flex;justify-content:flex-end;padding:6px 12px;font-size:14px;font-weight:600">
+            Accounts subtotal: <span style="color:var(--green);margin-left:8px">${fmt(acTotal)}</span>
+          </div>` : ""}
+
+        ${myExtras.length ? `
+          <div class="divider"></div>
+          <div style="font-size:11px;font-weight:600;color:var(--label);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">
+            Extra & Urgent Tasks (${myExtras.length})
+          </div>
+          ${exLines}
+          <div style="display:flex;justify-content:flex-end;padding:6px 12px;font-size:14px;font-weight:600">
+            Extras subtotal: <span style="color:var(--orange);margin-left:8px">${fmt(exTotal)}</span>
+          </div>` : ""}
+
+        ${!myAccounts.length && !myExtras.length ? `
+          <div style="text-align:center;padding:20px;color:var(--label);font-size:14px">
+            No accounts or tasks assigned yet.
+          </div>` : ""}
+
+        <div class="divider"></div>
+        <div class="invoice-total">
+          <span style="font-weight:700;font-size:15px">Total Due to ${editor.name}</span>
+          <span style="font-weight:800;font-size:20px;color:var(--blue)">${fmt(total)}</span>
+        </div>
+      </div>`;
+  });
+
+  let html = `
+    <div class="row-between" style="margin-bottom:20px">
+      <div>
+        <div style="font-size:18px;font-weight:700">Invoices</div>
+        <div style="font-size:13px;color:var(--label);margin-top:3px">Auto-calculated per editor</div>
+      </div>
+      <div class="row">
+        <input type="text" id="week-label-input" value="${weekLabel}" style="width:220px"
+          onchange="localStorage.setItem('eh_weeklabel', this.value); renderInvoices();" />
+      </div>
+    </div>`;
+
+  if (editors.length) {
+    html += `
+      <div class="card" style="background:linear-gradient(135deg,#007AFF,#5856D6);color:#fff;margin-bottom:24px">
+        <div style="font-size:13px;opacity:.8;margin-bottom:4px">${weekLabel} · Total Payroll</div>
+        <div style="font-size:38px;font-weight:800">${fmt(grandTotal)}</div>
+        <div style="font-size:13px;opacity:.8;margin-top:4px">
+          ${editors.length} editor${editors.length!==1?"s":""} · ${Object.keys(state.accounts).length} account${Object.keys(state.accounts).length!==1?"s":""}
+        </div>
+      </div>`;
+  }
+
+  if (!editors.length) {
+    html += `<div class="card empty"><div class="empty-icon">🧾</div>Add editors and assign accounts to generate invoices.</div>`;
+  }
+
+  html += invoiceBlocks.join("");
+  document.getElementById("content").innerHTML = html;
+}
+
+// ── Bootstrap ────────────────────────────────────────────────────────────────
+document.getElementById("header-date").textContent =
+  new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+
+const savedCfg = localStorage.getItem("eh_firebase_cfg");
+if (savedCfg) {
+  try {
+    initFirebase(JSON.parse(savedCfg));
+  } catch(e) {
+    console.error("Saved config failed", e);
+  }
+}
+</script>
+</body>
+</html>

@@ -21,19 +21,64 @@
     --teal:    #32ADE6;
     --bg:      #F2F2F7;
     --card:    rgba(255,255,255,0.82);
+    --card-solid: #ffffff;
     --border:  rgba(0,0,0,0.07);
     --label:   #8E8E93;
     --text:    #1C1C1E;
     --sidebar: rgba(255,255,255,0.78);
+    --input-bg: #ffffff;
+    --pill-bg: rgba(255,255,255,0.9);
+    --pill-border: #E5E5EA;
     --r:       16px;
     --font:    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    --bg-gradient: linear-gradient(135deg, #e8eeff 0%, #f2f2f7 40%, #fbe8ff 100%);
+    --header-bg: rgba(255,255,255,.65);
+    --filterbar-bg: rgba(255,255,255,0.7);
+    --filterbar-border: rgba(255,255,255,0.8);
+    --account-row-bg: rgba(255,255,255,0.7);
+    --account-row-border: rgba(255,255,255,0.8);
+    --modal-bg: rgba(255,255,255,0.95);
+    --invoice-text-bg: #1C1C1E;
+    --invoice-text-color: #E5E5E7;
+    --scrollbar-thumb: rgba(199,199,204,0.7);
+  }
+
+  [data-theme="dark"] {
+    --blue:    #0A84FF;
+    --blue2:   #5E5CE6;
+    --green:   #30D158;
+    --red:     #FF453A;
+    --orange:  #FF9F0A;
+    --purple:  #BF5AF2;
+    --teal:    #64D2FF;
+    --bg:      #1C1C1E;
+    --card:    rgba(44,44,46,0.78);
+    --card-solid: #2C2C2E;
+    --border:  rgba(255,255,255,0.08);
+    --label:   #98989D;
+    --text:    #F2F2F7;
+    --sidebar: rgba(28,28,30,0.82);
+    --input-bg: #1C1C1E;
+    --pill-bg: rgba(58,58,60,0.9);
+    --pill-border: #3A3A3C;
+    --bg-gradient: linear-gradient(135deg, #16161a 0%, #1c1c1e 40%, #20181f 100%);
+    --header-bg: rgba(28,28,30,.65);
+    --filterbar-bg: rgba(44,44,46,0.7);
+    --filterbar-border: rgba(255,255,255,0.08);
+    --account-row-bg: rgba(44,44,46,0.7);
+    --account-row-border: rgba(255,255,255,0.08);
+    --modal-bg: rgba(36,36,38,0.97);
+    --invoice-text-bg: #0d0d0e;
+    --invoice-text-color: #E5E5E7;
+    --scrollbar-thumb: rgba(120,120,124,0.7);
   }
 
   /* ── BG gradient ── */
   body {
     font-family: var(--font); color: var(--text); height: 100vh;
     display: flex; overflow: hidden; font-size: 14px;
-    background: linear-gradient(135deg, #e8eeff 0%, #f2f2f7 40%, #fbe8ff 100%);
+    background: var(--bg-gradient);
+    transition: background .3s, color .3s;
   }
 
   /* ── Sidebar ── */
@@ -45,7 +90,29 @@
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column; padding: 24px 0 16px; z-index: 10;
     box-shadow: 2px 0 24px rgba(0,0,0,0.04);
+    transition: background .3s, border-color .3s;
   }
+
+  /* ── Theme toggle ── */
+  .theme-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px; margin-top: 4px;
+  }
+  .theme-toggle-label { font-size: 12px; font-weight: 600; color: var(--label); display:flex; align-items:center; gap:6px; }
+  .theme-switch {
+    position: relative; width: 44px; height: 24px; border-radius: 14px;
+    background: var(--bg); border: 1px solid var(--border); cursor: pointer;
+    transition: background .25s; flex-shrink: 0;
+  }
+  .theme-switch .knob {
+    position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+    border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--blue2));
+    transition: transform .28s cubic-bezier(.34,1.4,.64,1), background .25s;
+    box-shadow: 0 2px 6px rgba(0,0,0,.2);
+    display: flex; align-items: center; justify-content: center; font-size: 10px;
+  }
+  [data-theme="dark"] .theme-switch .knob { transform: translateX(20px); background: linear-gradient(135deg, #2C2C2E, #48484A); }
+  [data-theme="dark"] .theme-switch { background: #0d0d0e; }
   .sidebar-brand { padding: 0 18px 18px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
   .sidebar-brand .logo {
     font-size: 17px; font-weight: 800;
@@ -60,15 +127,16 @@
   .nav-item {
     display: flex; align-items: center; gap: 10px;
     padding: 9px 10px; margin: 1px 8px; border-radius: 12px;
-    cursor: pointer; transition: background .12s, color .12s, box-shadow .12s;
+    cursor: pointer; transition: background .18s, color .18s, box-shadow .18s, transform .18s;
     font-size: 14px; font-weight: 400; color: var(--text); user-select: none;
   }
-  .nav-item:hover { background: rgba(0,0,0,0.05); }
+  .nav-item:hover { background: rgba(0,122,255,0.08); transform: translateX(3px); }
   .nav-item.active {
     background: linear-gradient(135deg, var(--blue), var(--blue2));
     color: #fff; font-weight: 600;
     box-shadow: 0 4px 12px rgba(0,122,255,0.28);
   }
+  .nav-item.active:hover { transform: translateX(3px); box-shadow: 0 5px 16px rgba(0,122,255,0.35); }
   .nav-item .icon { font-size: 15px; width: 22px; text-align: center; }
   .nav-badge {
     margin-left: auto; background: var(--red); color: #fff;
@@ -87,9 +155,10 @@
   #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   #header {
     padding: 16px 28px 14px; border-bottom: 1px solid var(--border);
-    background: rgba(255,255,255,.65); backdrop-filter: blur(20px) saturate(160%);
+    background: var(--header-bg); backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    transition: background .3s;
   }
   #header .title { font-size: 20px; font-weight: 700; }
   #header .date { font-size: 12px; color: var(--label); }
@@ -103,40 +172,76 @@
     margin-bottom: 14px;
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255,255,255,0.6);
+    transition: background .3s, border-color .3s, transform .18s, box-shadow .18s;
+  }
+  [data-theme="dark"] .card { border: 1px solid rgba(255,255,255,0.06); }
+  .card.anim-card:hover, .card:not(.anim-card):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 14px rgba(0,0,0,.07), 0 14px 32px rgba(0,0,0,.07);
   }
   .card-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--text); text-transform: uppercase; letter-spacing: .04em; }
-  .divider { height: 1px; background: var(--bg); margin: 12px 0; }
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
 
   /* ── Filter bar ── */
   .filter-bar {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    padding: 10px 14px; background: rgba(255,255,255,0.7);
+    padding: 10px 14px; background: var(--filterbar-bg);
     backdrop-filter: blur(16px); border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.8);
+    border: 1px solid var(--filterbar-border);
     box-shadow: 0 2px 8px rgba(0,0,0,.05);
     margin-bottom: 18px;
+    transition: background .3s, border-color .3s;
   }
   .filter-bar input[type=text] {
     flex: 1; min-width: 160px; padding: 7px 12px;
-    border-radius: 10px; border: 1.5px solid #E5E5EA;
+    border-radius: 10px; border: 1.5px solid var(--pill-border);
     font-size: 13px; font-family: var(--font); outline: none;
-    background: rgba(255,255,255,0.9); color: var(--text);
+    background: var(--pill-bg); color: var(--text);
     transition: border-color .15s;
   }
   .filter-bar input[type=text]:focus { border-color: var(--blue); }
   .filter-pill {
-    padding: 6px 14px; border-radius: 20px; border: 1.5px solid #E5E5EA;
-    background: rgba(255,255,255,0.9); font-size: 12px; font-weight: 600;
+    padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--pill-border);
+    background: var(--pill-bg); font-size: 12px; font-weight: 600;
     cursor: pointer; color: var(--label); transition: all .15s; white-space: nowrap;
+  }
+  .filter-pill:hover {
+    border-color: var(--blue); color: var(--blue); transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,122,255,0.15);
   }
   .filter-pill.active {
     background: linear-gradient(135deg, var(--blue), var(--blue2));
     color: #fff; border-color: transparent;
     box-shadow: 0 2px 8px rgba(0,122,255,0.25);
   }
+  .filter-pill.active:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,122,255,0.32); }
+
+  /* ── Chip group (replaces dropdowns) ── */
+  .chip-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .chip-group-label {
+    font-size: 10px; font-weight: 700; color: var(--label); text-transform: uppercase;
+    letter-spacing: .06em; margin-right: 2px; white-space: nowrap;
+  }
+  .chip {
+    padding: 6px 13px; border-radius: 20px; border: 1.5px solid var(--pill-border);
+    background: var(--pill-bg); font-size: 12px; font-weight: 600;
+    cursor: pointer; color: var(--label); transition: all .15s cubic-bezier(.22,1,.36,1);
+    white-space: nowrap; user-select: none; display: inline-flex; align-items: center; gap: 5px;
+  }
+  .chip:hover {
+    border-color: var(--blue); color: var(--blue); transform: translateY(-1px) scale(1.03);
+    box-shadow: 0 3px 10px rgba(0,122,255,0.18);
+  }
+  .chip.active {
+    background: linear-gradient(135deg, var(--blue), var(--blue2));
+    color: #fff; border-color: transparent;
+    box-shadow: 0 2px 10px rgba(0,122,255,0.28);
+  }
+  .chip.active:hover { transform: translateY(-1px) scale(1.03); box-shadow: 0 4px 14px rgba(0,122,255,0.35); }
+  .chip .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .filter-select {
-    padding: 6px 10px; border-radius: 10px; border: 1.5px solid #E5E5EA;
-    background: rgba(255,255,255,0.9); font-size: 12px; font-family: var(--font);
+    padding: 6px 10px; border-radius: 10px; border: 1.5px solid var(--pill-border);
+    background: var(--pill-bg); font-size: 12px; font-family: var(--font);
     color: var(--text); outline: none; cursor: pointer;
   }
   .filter-select:focus { border-color: var(--blue); }
@@ -157,9 +262,9 @@
 
   /* ── Inputs ── */
   input[type=text], input[type=number], input[type=date], select, textarea {
-    width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #E5E5EA;
-    font-size: 14px; font-family: var(--font); outline: none; background: #fff; color: var(--text);
-    transition: border-color .15s;
+    width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--pill-border);
+    font-size: 14px; font-family: var(--font); outline: none; background: var(--input-bg); color: var(--text);
+    transition: border-color .15s, background .3s;
   }
   input:focus, select:focus, textarea:focus { border-color: var(--blue); }
   .field { margin-bottom: 13px; }
@@ -174,7 +279,7 @@
   .editable-input {
     font-family: var(--font); border: 1.5px solid var(--blue) !important;
     border-radius: 6px; padding: 2px 6px; font-size: inherit; font-weight: inherit;
-    color: inherit; background: #fff; outline: none; width: auto; min-width: 60px;
+    color: inherit; background: var(--input-bg); outline: none; width: auto; min-width: 60px;
   }
 
   /* ── Grid ── */
@@ -194,26 +299,30 @@
     z-index: 1000; backdrop-filter: blur(8px);
   }
   .modal {
-    background: rgba(255,255,255,0.95); border-radius: 22px; padding: 28px;
+    background: var(--modal-bg); border-radius: 22px; padding: 28px;
     width: 450px; max-width: 93vw;
     box-shadow: 0 24px 80px rgba(0,0,0,.2), 0 0 0 1px rgba(255,255,255,.6);
     max-height: 92vh; overflow-y: auto;
     backdrop-filter: blur(20px);
   }
+  [data-theme="dark"] .modal { box-shadow: 0 24px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06); }
   .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
   .modal-header .modal-title { font-size: 17px; font-weight: 700; }
-  .modal-close { background: var(--bg); border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background .15s; }
-  .modal-close:hover { background: #e5e5ea; }
+  .modal-close { background: var(--bg); border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background .15s, transform .15s; color: var(--text); }
+  .modal-close:hover { background: var(--border); transform: rotate(90deg); }
 
   /* ── Account row ── */
   .account-row {
     display: flex; align-items: center; gap: 12px; padding: 11px 14px;
-    background: rgba(255,255,255,0.7); border-radius: 12px; margin-bottom: 8px;
-    border: 1px solid rgba(255,255,255,0.8);
+    background: var(--account-row-bg); border-radius: 12px; margin-bottom: 8px;
+    border: 1px solid var(--account-row-border);
     box-shadow: 0 1px 4px rgba(0,0,0,.04);
-    transition: box-shadow .15s;
+    transition: box-shadow .18s, transform .18s, border-color .18s, background .3s;
   }
-  .account-row:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+  .account-row:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,.1); transform: translateY(-2px) scale(1.005);
+    border-color: rgba(0,122,255,0.25);
+  }
   .account-num { width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
   .account-info { flex: 1; min-width: 0; }
   .account-info .name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -225,7 +334,14 @@
     background: linear-gradient(135deg, rgba(0,122,255,0.15), rgba(88,86,214,0.12));
     display: flex; align-items: center; justify-content: center;
     font-size: 19px; font-weight: 800; color: var(--blue); flex-shrink: 0;
+    transition: transform .25s cubic-bezier(.34,1.4,.64,1);
   }
+  .card:hover .editor-avatar { transform: scale(1.08) rotate(-3deg); }
+
+  .account-num {
+    transition: transform .2s cubic-bezier(.34,1.4,.64,1);
+  }
+  .account-row:hover .account-num { transform: scale(1.08); }
 
   /* ── Invoice card ── */
   .invoice-line { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 10px; margin-bottom: 6px; }
@@ -234,17 +350,19 @@
   /* ── Invoice text output ── */
   .invoice-text-area {
     font-family: "SF Mono", "Fira Mono", monospace; font-size: 12px; line-height: 1.7;
-    background: #1C1C1E; color: #E5E5E7; border-radius: 12px; padding: 14px 16px;
+    background: var(--invoice-text-bg); color: var(--invoice-text-color); border-radius: 12px; padding: 14px 16px;
     border: none; resize: vertical; min-height: 220px; width: 100%;
-    outline: none; letter-spacing: 0.01em;
+    outline: none; letter-spacing: 0.01em; transition: background .3s;
   }
 
   /* ── Rate pills ── */
   .rate-pill {
     padding: 12px 14px;
-    background: rgba(255,255,255,0.7); border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.8);
+    background: var(--filterbar-bg); border-radius: 12px;
+    border: 1px solid var(--filterbar-border);
+    transition: transform .18s, box-shadow .18s, background .3s;
   }
+  .rate-pill:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
   .rate-pill .rate-label { font-weight: 700; font-size: 13px; }
   .rate-pill .rate-reels { font-size: 12px; color: var(--label); margin-top: 2px; }
   .rate-pill .rate-amount { font-size: 17px; font-weight: 800; color: var(--green); margin-top: 4px; }
@@ -252,10 +370,22 @@
   /* ── Cluster chip ── */
   .cluster-chip {
     padding: 12px 16px; border-radius: 14px; margin: 0 0 10px 0;
-    background: rgba(255,255,255,0.75);
+    background: var(--card);
     box-shadow: 0 2px 8px rgba(0,0,0,.05);
-    border: 1px solid rgba(255,255,255,0.7);
+    border: 1px solid var(--filterbar-border);
     backdrop-filter: blur(8px);
+    transition: transform .2s cubic-bezier(.22,1,.36,1), box-shadow .2s, background .3s;
+  }
+  .cluster-chip:hover {
+    transform: translateY(-4px) scale(1.015);
+    box-shadow: 0 10px 28px rgba(0,0,0,.12);
+  }
+  .cluster-creator-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; padding: 3px 0; color: var(--text);
+  }
+  .cluster-creator-row .cc-count {
+    font-weight: 700; padding: 1px 8px; border-radius: 10px; font-size: 11px;
   }
 
   /* ── Empty state ── */
@@ -319,7 +449,7 @@
   /* ── Scrollbar ── */
   #content::-webkit-scrollbar { width: 6px; }
   #content::-webkit-scrollbar-track { background: transparent; }
-  #content::-webkit-scrollbar-thumb { background: rgba(199,199,204,0.7); border-radius: 3px; }
+  #content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
 
   /* ── Global page animations ── */
   @keyframes fade-up {
@@ -463,7 +593,11 @@
   <div class="nav-item" onclick="switchTab('invoices')" id="nav-invoices">
     <span class="icon">🧾</span> Invoices
   </div>
-  <div class="sidebar-footer">
+  <div class="theme-toggle-row" style="margin-top:auto">
+    <span class="theme-toggle-label"><span id="theme-icon">☀️</span> <span id="theme-text">Light Mode</span></span>
+    <div class="theme-switch" id="theme-switch" onclick="toggleTheme()"><div class="knob"></div></div>
+  </div>
+  <div class="sidebar-footer" style="margin-top:0">
     <div><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Live sync on</span></div>
     <div id="footer-editors">— editors</div>
     <div id="footer-accounts">— accounts</div>
@@ -484,6 +618,52 @@
 <div id="modal-root"></div>
 
 <script>
+// ── Week map (Mon–Sun weeks, numbered per-year, 2026–2030) ─────────────────────
+function buildWeekMap() {
+  const map = []; // { id, year, weekNum, start: Date, end: Date }
+  for (let year = 2026; year <= 2030; year++) {
+    // Find the first Monday on/before Jan 1 of `year` to anchor Week 1
+    const jan1 = new Date(year, 0, 1);
+    const dow = jan1.getDay(); // 0=Sun..6=Sat
+    const offsetToMonday = (dow === 0) ? -6 : (1 - dow); // days to reach Monday
+    let weekStart = new Date(year, 0, 1 + offsetToMonday);
+    let weekNum = 1;
+    while (true) {
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      // Stop once the week starts in the following year
+      if (weekStart.getFullYear() > year) break;
+      map.push({
+        id: `${year}-W${weekNum}`,
+        year, weekNum,
+        start: new Date(weekStart),
+        end: new Date(weekEnd)
+      });
+      weekStart = new Date(weekStart);
+      weekStart.setDate(weekStart.getDate() + 7);
+      weekNum++;
+      if (weekNum > 54) break; // safety
+    }
+  }
+  return map;
+}
+const WEEK_MAP = buildWeekMap();
+
+function fmtWeekDate(d) {
+  return d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+}
+function findWeekForDate(date) {
+  return WEEK_MAP.find(w => date >= w.start && date <= w.end) || WEEK_MAP[0];
+}
+function weekHeaderText(w) {
+  const sameMonth = w.start.getMonth() === w.end.getMonth();
+  const startStr = sameMonth
+    ? w.start.toLocaleDateString("en-US", { month: "long", day: "numeric" })
+    : w.start.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  const endStr = w.end.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  return `WEEK ${w.weekNum}: ${startStr.toUpperCase()} - ${endStr.toUpperCase()}, ${w.end.getFullYear()}`;
+}
+
 // ── Rate types (editable) ────────────────────────────────────────────────────
 let RATE_TYPES = [
   { id: "week1_2",       label: "Week 1–2",        reels: 7,  rate: 2.50 },
@@ -775,19 +955,28 @@ function renderAccounts() {
     <div class="filter-bar">
       <input type="text" placeholder="🔍  Search accounts, creators, type…" value="${filterState.search}"
         oninput="filterState.search=this.value; renderAccounts()" />
-      <select class="filter-select" onchange="filterState.cluster=this.value; renderAccounts()">
-        <option value="all" ${fCluster==='all'?'selected':''}>All Clusters</option>
-        ${clusters.map(([cid,cl]) => `<option value="${cid}" ${fCluster===cid?'selected':''}>${cl.name}</option>`).join('')}
-      </select>
-      <select class="filter-select" onchange="filterState.editor=this.value; renderAccounts()">
-        <option value="all" ${fEditor==='all'?'selected':''}>All Editors</option>
-        <option value="unassigned" ${fEditor==='unassigned'?'selected':''}>Unassigned</option>
-        ${editors.map(([eid,e]) => `<option value="${eid}" ${fEditor===eid?'selected':''}>${e.name}</option>`).join('')}
-      </select>
-      <select class="filter-select" onchange="filterState.type=this.value; renderAccounts()">
-        <option value="all" ${fType==='all'?'selected':''}>All Types</option>
-        ${RATE_TYPES.map(t => `<option value="${t.id}" ${fType===t.id?'selected':''}>${t.label}</option>`).join('')}
-      </select>
+    </div>
+    <div class="filter-bar">
+      <div class="chip-group">
+        <span class="chip-group-label">Cluster</span>
+        <span class="chip ${fCluster==='all'?'active':''}" onclick="filterState.cluster='all'; renderAccounts()">All</span>
+        ${clusters.map(([cid,cl]) => `<span class="chip ${fCluster===cid?'active':''}" onclick="filterState.cluster='${cid}'; renderAccounts()"><span class="chip-dot" style="background:${cl.color}"></span>${cl.name}</span>`).join('')}
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div class="chip-group">
+        <span class="chip-group-label">Editor</span>
+        <span class="chip ${fEditor==='all'?'active':''}" onclick="filterState.editor='all'; renderAccounts()">All</span>
+        <span class="chip ${fEditor==='unassigned'?'active':''}" onclick="filterState.editor='unassigned'; renderAccounts()">Unassigned</span>
+        ${editors.map(([eid,e]) => `<span class="chip ${fEditor===eid?'active':''}" onclick="filterState.editor='${eid}'; renderAccounts()">${e.name}</span>`).join('')}
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div class="chip-group">
+        <span class="chip-group-label">Type</span>
+        <span class="chip ${fType==='all'?'active':''}" onclick="filterState.type='all'; renderAccounts()">All</span>
+        ${RATE_TYPES.map(t => `<span class="chip ${fType===t.id?'active':''}" onclick="filterState.type='${t.id}'; renderAccounts()">${t.label}</span>`).join('')}
+      </div>
     </div>`;
 
   let html = `
@@ -798,17 +987,45 @@ function renderAccounts() {
     <div class="row" style="margin-bottom:22px;gap:10px;flex-wrap:wrap">`;
 
   if (!clusters.length) html += `<span style="color:var(--label);font-size:14px">No clusters yet.</span>`;
+  const creatorSwatches = ["#007AFF","#34C759","#FF9500","#AF52DE","#FF3B30","#32ADE6","#5856D6","#FF6B35","#8E8E93","#30D158"];
   clusters.forEach(([cid, cl], ci) => {
-    // Count accounts that belong to this cluster specifically
-    const count = Object.values(state.accounts).filter(ac => {
+    // Accounts that belong to this cluster specifically
+    const clusterAccounts = Object.values(state.accounts).filter(ac => {
       if (ac.clusterId) return ac.clusterId === cid;
       return ac.number >= cl.range[0] && ac.number <= cl.range[1];
-    }).length;
+    });
+    const count = clusterAccounts.length;
+
+    // Group by creator for visual separation
+    const byCreator = {};
+    clusterAccounts.forEach(ac => {
+      const cname = creatorName(ac.creatorId);
+      if (!byCreator[cname]) byCreator[cname] = 0;
+      byCreator[cname]++;
+    });
+    const creatorEntries = Object.entries(byCreator);
+    let creatorRowsHtml = "";
+    if (creatorEntries.length > 1) {
+      creatorRowsHtml = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">` +
+        creatorEntries.map(([cname, ccount], idx) => {
+          const swatch = creatorSwatches[idx % creatorSwatches.length];
+          return `<div class="cluster-creator-row">
+            <span style="display:flex;align-items:center;gap:6px;min-width:0">
+              <span class="chip-dot" style="background:${swatch}"></span>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cname}</span>
+            </span>
+            <span class="cc-count" style="background:${swatch}1c;color:${swatch}">${ccount}</span>
+          </div>`;
+        }).join("") +
+      `</div>`;
+    }
+
     html += `
-      <div class="cluster-chip anim-card" style="border-left:4px solid ${cl.color};min-width:155px;animation-delay:${ci*0.05}s">
+      <div class="cluster-chip anim-card" style="border-left:4px solid ${cl.color};min-width:175px;animation-delay:${ci*0.05}s">
         <div style="font-weight:700;color:${cl.color};font-size:15px" id="cname-${cid}">${cl.name}</div>
         <div style="font-size:12px;color:var(--label);margin-top:2px">Accounts #${cl.range[0]}–#${cl.range[1]}</div>
-        <div style="font-size:13px;margin-top:2px;font-weight:600">${count} account${count !== 1 ? "s" : ""}</div>
+        <div style="font-size:13px;margin-top:2px;font-weight:600">${count} account${count !== 1 ? "s" : ""}${creatorEntries.length > 1 ? ` · ${creatorEntries.length} creators` : ""}</div>
+        ${creatorRowsHtml}
         <div class="row" style="gap:6px;margin-top:8px">
           <button class="btn btn-secondary btn-sm" onclick="editClusterModal('${cid}')">Edit</button>
           <button class="btn btn-danger btn-sm" onclick="removeCluster('${cid}')">Remove</button>
@@ -1059,6 +1276,8 @@ function removeAccount(acid) {
 function clusterQuickFillModal() {
   const editorsOpts = Object.entries(state.editors).map(([id,e]) => `<option value="${id}">${e.name}</option>`).join("");
   const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}">${t.label} — ${t.reels} reels · ${fmt(t.rate)}/wk</option>`).join("");
+  const existingClusters = Object.entries(state.clusters);
+  const existingCreators = Object.entries(state.creators);
 
   openModal(`
     <div class="modal-header qf-modal-enter">
@@ -1068,14 +1287,23 @@ function clusterQuickFillModal() {
     <div style="font-size:13px;color:var(--label);margin-bottom:18px;line-height:1.6">
       Fill in the cluster details and all accounts will be created at once — no more adding one by one!
     </div>
+    ${existingClusters.length ? `
+    <div class="field">
+      <label>Existing Clusters <span style="text-transform:none;font-weight:500">(tap to align with one)</span></label>
+      <div class="chip-group">
+        ${existingClusters.map(([cid,cl]) => `<span class="chip" onclick="qfPickCluster('${cid}')"><span class="chip-dot" style="background:${cl.color}"></span>${cl.name}</span>`).join('')}
+      </div>
+    </div>` : ""}
     <div class="grid2">
       <div class="field">
         <label>Cluster Name</label>
-        <input type="text" id="qf-cluster" placeholder="e.g. Cluster A Part 1" oninput="qfUpdatePreview()" />
+        <input type="text" id="qf-cluster" placeholder="e.g. Cluster A Part 1" list="qf-cluster-list" oninput="qfUpdatePreview()" />
+        <datalist id="qf-cluster-list">${existingClusters.map(([,cl]) => `<option value="${cl.name}">`).join('')}</datalist>
       </div>
       <div class="field">
         <label>Creator Name</label>
-        <input type="text" id="qf-creator" placeholder="@brandname" oninput="qfUpdatePreview()" />
+        <input type="text" id="qf-creator" placeholder="@brandname" list="qf-creator-list" oninput="qfUpdatePreview()" />
+        <datalist id="qf-creator-list">${existingCreators.map(([,c]) => `<option value="${c.name}">`).join('')}</datalist>
       </div>
     </div>
     <div class="grid2">
@@ -1096,6 +1324,7 @@ function clusterQuickFillModal() {
       <label>Assign Editor (optional, applies to all)</label>
       <select id="qf-editor"><option value="">— Assign later —</option>${editorsOpts}</select>
     </div>
+    <input type="hidden" id="qf-color" value="" />
     <div id="qf-preview"></div>
     <div class="row" style="justify-content:flex-end;gap:8px;margin-top:16px">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
@@ -1106,6 +1335,27 @@ function clusterQuickFillModal() {
 
   // Trigger initial preview after modal opens
   setTimeout(qfUpdatePreview, 60);
+}
+
+// Align quick-fill inputs to an existing cluster's name, color, and next available account #
+function qfPickCluster(cid) {
+  const cl = state.clusters[cid];
+  if (!cl) return;
+  const clusterEl = document.getElementById("qf-cluster");
+  const colorEl   = document.getElementById("qf-color");
+  if (clusterEl) clusterEl.value = cl.name;
+  if (colorEl) colorEl.value = cl.color;
+
+  // Find the next free account number after this cluster's existing accounts
+  const clusterAccountNums = Object.values(state.accounts)
+    .filter(ac => ac.clusterId ? ac.clusterId === cid : (ac.number >= cl.range[0] && ac.number <= cl.range[1]))
+    .map(ac => ac.number);
+  const maxExisting = clusterAccountNums.length ? Math.max(...clusterAccountNums, cl.range[1]) : cl.range[1];
+  const startEl = document.getElementById("qf-start");
+  if (startEl && !startEl.value) startEl.value = maxExisting + 1;
+
+  toast(`Aligned to "${cl.name}" — accounts will join this cluster`);
+  qfUpdatePreview();
 }
 
 function qfUpdatePreview() {
@@ -1192,6 +1442,13 @@ async function qfSubmit() {
     const usedColors = Object.values(state.clusters).map(c => c.color);
     const color = colors.find(c => !usedColors.includes(c)) || colors[Math.floor(Math.random() * colors.length)];
     await DB.ref(`/clusters/${clusterId}`).set({ name: clusterName, range: [start, end], color });
+  } else {
+    // Align/extend the existing cluster's range to cover the new accounts too
+    const cl = state.clusters[clusterId];
+    const newRange = [Math.min(cl.range[0], start), Math.max(cl.range[1], end)];
+    if (newRange[0] !== cl.range[0] || newRange[1] !== cl.range[1]) {
+      await DB.ref(`/clusters/${clusterId}/range`).set(newRange);
+    }
   }
 
   // Batch write all accounts + assignments (store clusterId so count is exact)
@@ -1257,10 +1514,13 @@ function renderExtras() {
     <div class="filter-bar">
       <input type="text" placeholder="🔍  Search tasks…" value="${filterState.search}"
         oninput="filterState.search=this.value; renderExtras()" />
-      <select class="filter-select" onchange="filterState.editor=this.value; renderExtras()">
-        <option value="all" ${fEditor==='all'?'selected':''}>All Editors</option>
-        ${editors.map(([eid,e]) => `<option value="${eid}" ${fEditor===eid?'selected':''}>${e.name}</option>`).join('')}
-      </select>
+    </div>
+    <div class="filter-bar">
+      <div class="chip-group">
+        <span class="chip-group-label">Editor</span>
+        <span class="chip ${fEditor==='all'?'active':''}" onclick="filterState.editor='all'; renderExtras()">All</span>
+        ${editors.map(([eid,e]) => `<span class="chip ${fEditor===eid?'active':''}" onclick="filterState.editor='${eid}'; renderExtras()">${e.name}</span>`).join('')}
+      </div>
     </div>`;
 
   if (!tasks.length) {
@@ -1370,6 +1630,19 @@ function removeExtra(tid) {
   remove(`/extras/${tid}`).then(() => toast("Task removed"));
 }
 
+// ── Invoice week selector handlers ──────────────────────────────────────────
+function onInvoiceYearChange() {
+  const year = parseInt(document.getElementById("invoice-year-select").value);
+  const firstWeekOfYear = WEEK_MAP.find(w => w.year === year);
+  if (firstWeekOfYear) localStorage.setItem("eh_selected_week_id", firstWeekOfYear.id);
+  renderInvoices();
+}
+function onInvoiceWeekChange() {
+  const weekId = document.getElementById("invoice-week-select").value;
+  localStorage.setItem("eh_selected_week_id", weekId);
+  renderInvoices();
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // INVOICES TAB
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1377,27 +1650,15 @@ function renderInvoices() {
   const fEditor = filterState.editor || "all";
   const searchQ = (filterState.search || "").toLowerCase();
 
-  // Auto-compute current week Mon–Sun if nothing saved yet
-  function currentWeekLabel() {
+  // Determine selected week (persisted), default to the current week
+  let selectedWeekId = localStorage.getItem("eh_selected_week_id");
+  if (!selectedWeekId || !WEEK_MAP.find(w => w.id === selectedWeekId)) {
     const now = new Date();
-    const day = now.getDay(); // 0=Sun
-    const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-    const opts = { month:"short", day:"numeric" };
-    const y = sun.getFullYear();
-    return `${mon.toLocaleDateString("en-US", opts)} – ${sun.toLocaleDateString("en-US", opts)}, ${y}`;
+    selectedWeekId = findWeekForDate(now).id;
   }
-  function currentWeekNum() {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 1);
-    return Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7);
-  }
-
-  const autoRange = currentWeekLabel();
-  const autoLabel = `Week ${currentWeekNum()}`;
-
-  const weekLabel = localStorage.getItem("eh_weeklabel") || autoLabel;
-  const weekRange = localStorage.getItem("eh_weekrange") || autoRange;
+  const selectedWeek = WEEK_MAP.find(w => w.id === selectedWeekId) || findWeekForDate(new Date());
+  const weekLabel = `Week ${selectedWeek.weekNum}`;
+  const weekRange = `${fmtWeekDate(selectedWeek.start)} – ${fmtWeekDate(selectedWeek.end)}, ${selectedWeek.end.getFullYear()}`;
 
   let editors = Object.entries(state.editors);
   if (fEditor !== "all") editors = editors.filter(([eid]) => eid === fEditor);
@@ -1415,6 +1676,9 @@ function renderInvoices() {
     grandTotal += acTotal + exTotal;
   });
 
+  // Build year/week chip options for the picker
+  const years = [...new Set(WEEK_MAP.map(w => w.year))];
+
   let html = `
     <div class="row-between" style="margin-bottom:16px">
       <div>
@@ -1425,17 +1689,21 @@ function renderInvoices() {
     <div class="filter-bar">
       <input type="text" placeholder="🔍  Search editors…" value="${filterState.search}"
         oninput="filterState.search=this.value; renderInvoices()" />
-      <select class="filter-select" onchange="filterState.editor=this.value; renderInvoices()">
-        <option value="all" ${fEditor==='all'?'selected':''}>All Editors</option>
-        ${allEditorsList.map(([eid,e]) => `<option value="${eid}" ${fEditor===eid?'selected':''}>${e.name}</option>`).join('')}
-      </select>
-      <div style="display:flex;flex-direction:column;gap:4px;margin-left:auto">
-        <input type="text" id="week-label-input" value="${weekLabel}" placeholder="Week label…"
-          style="width:200px;font-size:12px;padding:5px 10px"
-          onchange="localStorage.setItem('eh_weeklabel', this.value); renderInvoices();" />
-        <input type="text" id="week-range-input" value="${weekRange}" placeholder="Jun 1 – Jun 7, 2026"
-          style="width:200px;font-size:12px;padding:5px 10px"
-          onchange="localStorage.setItem('eh_weekrange', this.value); renderInvoices();" />
+      <div class="chip-group">
+        <span class="chip-group-label">Editor</span>
+        <span class="chip ${fEditor==='all'?'active':''}" onclick="filterState.editor='all'; renderInvoices()">All</span>
+        ${allEditorsList.map(([eid,e]) => `<span class="chip ${fEditor===eid?'active':''}" onclick="filterState.editor='${eid}'; renderInvoices()">${e.name}</span>`).join('')}
+      </div>
+      <div class="chip-group" style="margin-left:auto">
+        <span class="chip-group-label">Week</span>
+        <select class="filter-select" id="invoice-year-select" onchange="onInvoiceYearChange()">
+          ${years.map(y => `<option value="${y}" ${y===selectedWeek.year?'selected':''}>${y}</option>`).join('')}
+        </select>
+        <select class="filter-select" id="invoice-week-select" onchange="onInvoiceWeekChange()" style="max-width:230px">
+          ${WEEK_MAP.filter(w => w.year === selectedWeek.year).map(w =>
+            `<option value="${w.id}" ${w.id===selectedWeekId?'selected':''}>Week ${w.weekNum}: ${fmtWeekDate(w.start)} – ${fmtWeekDate(w.end)}</option>`
+          ).join('')}
+        </select>
       </div>
     </div>`;
 
@@ -1514,7 +1782,7 @@ function renderInvoices() {
             <div class="editor-avatar">${initials(editor.name)}</div>
             <div>
               <div style="font-size:17px;font-weight:700">${editor.name}</div>
-              <div style="font-size:13px;color:var(--label)">${weekLabel}</div>
+              <div style="font-size:13px;color:var(--label)">${weekLabel} · ${weekRange}</div>
             </div>
           </div>
           <div style="text-align:right">
@@ -1577,19 +1845,13 @@ function generateInvoiceText(eid) {
   const editorName_  = editor.name.toUpperCase();
   const workedDays   = parseInt(document.getElementById("worked-days-" + eid).value) || 5;
 
-  const weekRange    = localStorage.getItem("eh_weekrange") || (() => {
-    const now = new Date(), day = now.getDay();
-    const mon = new Date(now); mon.setDate(now.getDate() - (day===0?6:day-1));
-    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-    const o = {month:"short",day:"numeric"};
-    return `${mon.toLocaleDateString("en-US",o)} – ${sun.toLocaleDateString("en-US",o)}, ${sun.getFullYear()}`;
-  })();
-  const weekLabelRaw = localStorage.getItem("eh_weeklabel") || (() => {
-    const now=new Date(), start=new Date(now.getFullYear(),0,1);
-    return `Week ${Math.ceil(((now-start)/86400000+start.getDay()+1)/7)}`;
-  })();
-
-  let weekHeader = weekRange || weekLabelRaw;
+  // Selected week (persisted globally for the Invoices tab)
+  let selectedWeekId = localStorage.getItem("eh_selected_week_id");
+  if (!selectedWeekId || !WEEK_MAP.find(w => w.id === selectedWeekId)) {
+    selectedWeekId = findWeekForDate(new Date()).id;
+  }
+  const selectedWeek = WEEK_MAP.find(w => w.id === selectedWeekId) || findWeekForDate(new Date());
+  const weekHeader = weekHeaderText(selectedWeek);
 
   const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
   const myAccounts = myAssignments.map(a => state.accounts[a.accountId]).filter(Boolean);
@@ -1611,30 +1873,62 @@ function generateInvoiceText(eid) {
   const exTotal  = myExtras.reduce((s,t) => s + Number(t.amount), 0);
   const total    = acTotal + exTotal;
 
-  // Build text
+  // Build text matching:
+  // **INVOICE (WEEK 23: JUNE 1 - JUNE 7, 2026)**
+  //
+  // Worked days: 5
+  //
+  // Projects:
+  // • Yuna
+  //
+  // ANGELA
+  //
+  // **THIS WEEK:**
+  // Accounts: 15 + 1
+  //
+  // **ACCOUNT LIST:**
+  // - Post Schedule (15): $90.00
+  // - Week 3 (1): $4.00
+  //
+  // TOTAL BASE PAY: $94.00
+  //
+  // **EXPENSE:**
+  // None
+  //
+  // **Total $94.00**
   let lines = [];
-  lines.push(`INVOICE (${weekHeader.toUpperCase()})`);
+  lines.push(`**INVOICE (${weekHeader})**`);
+  lines.push("");
   lines.push(`Worked days: ${workedDays}`);
-  if (projectNames.length) lines.push(`Projects: ${projectNames.map(p => `• ${p}`).join("  ")}`);
   lines.push("");
-  lines.push(`${editorName_} THIS WEEK:`);
-  lines.push(`Accounts: ${myAccounts.length}${myExtras.length ? " + " + myExtras.length + " EXTRA" : ""}`);
-  lines.push("");
-  lines.push("ACCOUNT LIST:");
-  Object.values(typeGroups).forEach(g => {
-    lines.push(`   * ${g.label} (${g.count}): ${fmt(g.total)}`);
-  });
-  if (myExtras.length) {
+  if (projectNames.length) {
+    lines.push("Projects:");
+    projectNames.forEach(p => lines.push(`• ${p}`));
     lines.push("");
-    lines.push("EXTRAS:");
-    myExtras.forEach(t => {
-      lines.push(`   * ${t.description}: ${fmt(t.amount)}`);
-    });
   }
+  lines.push(editorName_);
+  lines.push("");
+  lines.push("**THIS WEEK:**");
+  const accountGroups = Object.values(typeGroups);
+  const accountsSummary = accountGroups.map(g => g.count).join(" + ") || "0";
+  lines.push(`Accounts: ${accountsSummary}`);
+  lines.push("");
+  lines.push("**ACCOUNT LIST:**");
+  accountGroups.forEach(g => {
+    lines.push(`- ${g.label} (${g.count}): ${fmt(g.total)}`);
+  });
+  if (!accountGroups.length) lines.push("None");
   lines.push("");
   lines.push(`TOTAL BASE PAY: ${fmt(acTotal)}`);
-  lines.push(`EXPENSE: ${exTotal > 0 ? fmt(exTotal) : "None"}`);
-  lines.push(`Total ${fmt(total)}`);
+  lines.push("");
+  lines.push("**EXPENSE:**");
+  if (myExtras.length) {
+    myExtras.forEach(t => lines.push(`- ${t.description}: ${fmt(t.amount)}`));
+  } else {
+    lines.push("None");
+  }
+  lines.push("");
+  lines.push(`**Total ${fmt(total)}**`);
 
   document.getElementById("inv-text-" + eid).value = lines.join("\n");
 }
@@ -1646,6 +1940,26 @@ function copyInvoiceText(eid) {
     ta.select(); document.execCommand("copy"); toast("Copied!");
   });
 }
+
+// ── Theme ────────────────────────────────────────────────────────────────────
+function applyTheme(theme) {
+  if (theme === "dark") {
+    document.documentElement.setAttribute("data-theme", "dark");
+    document.getElementById("theme-icon").textContent = "🌙";
+    document.getElementById("theme-text").textContent = "Dark Mode";
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+    document.getElementById("theme-icon").textContent = "☀️";
+    document.getElementById("theme-text").textContent = "Light Mode";
+  }
+}
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const next = isDark ? "light" : "dark";
+  localStorage.setItem("eh_theme", next);
+  applyTheme(next);
+}
+applyTheme(localStorage.getItem("eh_theme") || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 document.getElementById("header-date").textContent =

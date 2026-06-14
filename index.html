@@ -10,51 +10,75 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
-  /* ── Reset & Base ── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --blue:    #007AFF;
+    --blue2:   #5856D6;
     --green:   #34C759;
     --red:     #FF3B30;
     --orange:  #FF9500;
-    --purple:  #5856D6;
+    --purple:  #AF52DE;
+    --teal:    #32ADE6;
     --bg:      #F2F2F7;
-    --card:    #FFFFFF;
+    --card:    rgba(255,255,255,0.82);
     --border:  rgba(0,0,0,0.07);
     --label:   #8E8E93;
     --text:    #1C1C1E;
-    --sidebar: rgba(255,255,255,0.88);
-    --r:       14px;
+    --sidebar: rgba(255,255,255,0.78);
+    --r:       16px;
     --font:    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
   }
-  body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; font-size: 14px; }
+
+  /* ── BG gradient ── */
+  body {
+    font-family: var(--font); color: var(--text); height: 100vh;
+    display: flex; overflow: hidden; font-size: 14px;
+    background: linear-gradient(135deg, #e8eeff 0%, #f2f2f7 40%, #fbe8ff 100%);
+  }
 
   /* ── Sidebar ── */
   #sidebar {
-    width: 220px; min-width: 220px; background: var(--sidebar);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    width: 224px; min-width: 224px;
+    background: var(--sidebar);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column; padding: 24px 0 16px; z-index: 10;
+    box-shadow: 2px 0 24px rgba(0,0,0,0.04);
   }
   .sidebar-brand { padding: 0 18px 18px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
-  .sidebar-brand .logo { font-size: 17px; font-weight: 800; color: var(--blue); }
+  .sidebar-brand .logo {
+    font-size: 17px; font-weight: 800;
+    background: linear-gradient(135deg, var(--blue), var(--blue2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
   .sidebar-brand .sub { font-size: 11px; color: var(--label); margin-top: 2px; }
-  .nav-section-label { font-size: 11px; font-weight: 600; color: var(--label); letter-spacing: .06em; text-transform: uppercase; padding: 6px 18px 4px; }
+  .nav-section-label {
+    font-size: 10px; font-weight: 700; color: var(--label);
+    letter-spacing: .08em; text-transform: uppercase; padding: 10px 18px 4px;
+  }
   .nav-item {
     display: flex; align-items: center; gap: 10px;
-    padding: 9px 10px; margin: 1px 8px; border-radius: 10px;
-    cursor: pointer; transition: background .12s, color .12s;
+    padding: 9px 10px; margin: 1px 8px; border-radius: 12px;
+    cursor: pointer; transition: background .12s, color .12s, box-shadow .12s;
     font-size: 14px; font-weight: 400; color: var(--text); user-select: none;
   }
   .nav-item:hover { background: rgba(0,0,0,0.05); }
-  .nav-item.active { background: var(--blue); color: #fff; font-weight: 600; }
-  .nav-item .icon { font-size: 16px; width: 22px; text-align: center; }
+  .nav-item.active {
+    background: linear-gradient(135deg, var(--blue), var(--blue2));
+    color: #fff; font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,122,255,0.28);
+  }
+  .nav-item .icon { font-size: 15px; width: 22px; text-align: center; }
   .nav-badge {
     margin-left: auto; background: var(--red); color: #fff;
     border-radius: 20px; font-size: 11px; font-weight: 700;
     padding: 1px 7px; min-width: 20px; text-align: center;
   }
-  .sidebar-footer { margin-top: auto; padding: 12px 18px; border-top: 1px solid var(--border); font-size: 12px; color: var(--label); line-height: 1.9; }
+  .sidebar-footer {
+    margin-top: auto; padding: 12px 18px;
+    border-top: 1px solid var(--border); font-size: 12px; color: var(--label); line-height: 1.9;
+  }
   .sync-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-right: 5px; }
   .sync-dot.syncing { background: var(--orange); animation: pulse 1s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
@@ -62,25 +86,73 @@
   /* ── Main ── */
   #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   #header {
-    padding: 18px 28px 14px; border-bottom: 1px solid var(--border);
-    background: rgba(255,255,255,.75); backdrop-filter: blur(16px);
+    padding: 16px 28px 14px; border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,.65); backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
     display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
   }
-  #header .title { font-size: 21px; font-weight: 700; }
-  #header .date { font-size: 13px; color: var(--label); }
-  #content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+  #header .title { font-size: 20px; font-weight: 700; }
+  #header .date { font-size: 12px; color: var(--label); }
+  #content { flex: 1; overflow-y: auto; padding: 22px 26px; }
 
   /* ── Cards ── */
-  .card { background: var(--card); border-radius: var(--r); padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04); margin-bottom: 14px; }
-  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+  .card {
+    background: var(--card);
+    border-radius: var(--r); padding: 18px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.04);
+    margin-bottom: 14px;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  .card-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--text); text-transform: uppercase; letter-spacing: .04em; }
   .divider { height: 1px; background: var(--bg); margin: 12px 0; }
 
+  /* ── Filter bar ── */
+  .filter-bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 10px 14px; background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(16px); border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.8);
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    margin-bottom: 18px;
+  }
+  .filter-bar input[type=text] {
+    flex: 1; min-width: 160px; padding: 7px 12px;
+    border-radius: 10px; border: 1.5px solid #E5E5EA;
+    font-size: 13px; font-family: var(--font); outline: none;
+    background: rgba(255,255,255,0.9); color: var(--text);
+    transition: border-color .15s;
+  }
+  .filter-bar input[type=text]:focus { border-color: var(--blue); }
+  .filter-pill {
+    padding: 6px 14px; border-radius: 20px; border: 1.5px solid #E5E5EA;
+    background: rgba(255,255,255,0.9); font-size: 12px; font-weight: 600;
+    cursor: pointer; color: var(--label); transition: all .15s; white-space: nowrap;
+  }
+  .filter-pill.active {
+    background: linear-gradient(135deg, var(--blue), var(--blue2));
+    color: #fff; border-color: transparent;
+    box-shadow: 0 2px 8px rgba(0,122,255,0.25);
+  }
+  .filter-select {
+    padding: 6px 10px; border-radius: 10px; border: 1.5px solid #E5E5EA;
+    background: rgba(255,255,255,0.9); font-size: 12px; font-family: var(--font);
+    color: var(--text); outline: none; cursor: pointer;
+  }
+  .filter-select:focus { border-color: var(--blue); }
+
   /* ── Buttons ── */
-  .btn { padding: 8px 16px; border-radius: 10px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; font-family: var(--font); transition: opacity .15s; }
-  .btn:hover { opacity: .85; }
-  .btn-primary { background: var(--blue); color: #fff; }
-  .btn-secondary { background: var(--bg); color: var(--blue); }
-  .btn-danger { background: var(--red); color: #fff; }
+  .btn { padding: 8px 16px; border-radius: 10px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; font-family: var(--font); transition: opacity .15s, transform .1s; }
+  .btn:hover { opacity: .88; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--blue), var(--blue2));
+    color: #fff; box-shadow: 0 4px 12px rgba(0,122,255,0.28);
+  }
+  .btn-secondary { background: rgba(0,122,255,0.1); color: var(--blue); }
+  .btn-danger { background: linear-gradient(135deg, #FF3B30, #FF6B35); color: #fff; box-shadow: 0 2px 8px rgba(255,59,48,0.2); }
+  .btn-ghost { background: rgba(0,0,0,0.05); color: var(--label); }
+  .btn-green { background: linear-gradient(135deg, var(--green), #30D158); color: #fff; box-shadow: 0 2px 8px rgba(52,199,89,0.25); }
   .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 8px; }
 
   /* ── Inputs ── */
@@ -91,7 +163,19 @@
   }
   input:focus, select:focus, textarea:focus { border-color: var(--blue); }
   .field { margin-bottom: 13px; }
-  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--label); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+  .field label { display: block; font-size: 11px; font-weight: 700; color: var(--label); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em; }
+
+  /* ── Inline editable ── */
+  .editable {
+    cursor: pointer; border-radius: 6px; padding: 1px 4px; margin: -1px -4px;
+    transition: background .15s;
+  }
+  .editable:hover { background: rgba(0,122,255,0.08); }
+  .editable-input {
+    font-family: var(--font); border: 1.5px solid var(--blue) !important;
+    border-radius: 6px; padding: 2px 6px; font-size: inherit; font-weight: inherit;
+    color: inherit; background: #fff; outline: none; width: auto; min-width: 60px;
+  }
 
   /* ── Grid ── */
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -105,92 +189,121 @@
 
   /* ── Modal ── */
   .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,.35);
+    position: fixed; inset: 0; background: rgba(0,0,0,.3);
     display: flex; align-items: center; justify-content: center;
-    z-index: 1000; backdrop-filter: blur(4px);
+    z-index: 1000; backdrop-filter: blur(8px);
   }
   .modal {
-    background: #fff; border-radius: 20px; padding: 26px; width: 430px; max-width: 92vw;
-    box-shadow: 0 20px 60px rgba(0,0,0,.18); max-height: 90vh; overflow-y: auto;
+    background: rgba(255,255,255,0.95); border-radius: 22px; padding: 28px;
+    width: 450px; max-width: 93vw;
+    box-shadow: 0 24px 80px rgba(0,0,0,.2), 0 0 0 1px rgba(255,255,255,.6);
+    max-height: 92vh; overflow-y: auto;
+    backdrop-filter: blur(20px);
   }
   .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
   .modal-header .modal-title { font-size: 17px; font-weight: 700; }
-  .modal-close { background: var(--bg); border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+  .modal-close { background: var(--bg); border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+  .modal-close:hover { background: #e5e5ea; }
 
   /* ── Account row ── */
-  .account-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--bg); border-radius: 10px; margin-bottom: 8px; }
-  .account-num { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+  .account-row {
+    display: flex; align-items: center; gap: 12px; padding: 11px 14px;
+    background: rgba(255,255,255,0.7); border-radius: 12px; margin-bottom: 8px;
+    border: 1px solid rgba(255,255,255,0.8);
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    transition: box-shadow .15s;
+  }
+  .account-row:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+  .account-num { width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
   .account-info { flex: 1; min-width: 0; }
   .account-info .name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .account-info .meta { font-size: 12px; color: var(--label); margin-top: 2px; }
 
   /* ── Editor card ── */
-  .editor-avatar { width: 44px; height: 44px; border-radius: 12px; background: #007AFF18; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: var(--blue); flex-shrink: 0; }
+  .editor-avatar {
+    width: 46px; height: 46px; border-radius: 14px;
+    background: linear-gradient(135deg, rgba(0,122,255,0.15), rgba(88,86,214,0.12));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; font-weight: 800; color: var(--blue); flex-shrink: 0;
+  }
 
-  /* ── Invoice ── */
+  /* ── Invoice card ── */
   .invoice-line { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 10px; margin-bottom: 6px; }
-  .invoice-total { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: #F0F7FF; border-radius: 12px; }
+  .invoice-total { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, rgba(0,122,255,0.07), rgba(88,86,214,0.05)); border-radius: 13px; border: 1px solid rgba(0,122,255,0.12); }
+
+  /* ── Invoice text output ── */
+  .invoice-text-area {
+    font-family: "SF Mono", "Fira Mono", monospace; font-size: 12px; line-height: 1.7;
+    background: #1C1C1E; color: #E5E5E7; border-radius: 12px; padding: 14px 16px;
+    border: none; resize: vertical; min-height: 220px; width: 100%;
+    outline: none; letter-spacing: 0.01em;
+  }
 
   /* ── Rate pills ── */
-  .rate-pill { padding: 10px 14px; background: var(--bg); border-radius: 10px; }
-  .rate-pill .rate-label { font-weight: 600; font-size: 13px; }
+  .rate-pill {
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.7); border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.8);
+  }
+  .rate-pill .rate-label { font-weight: 700; font-size: 13px; }
   .rate-pill .rate-reels { font-size: 12px; color: var(--label); margin-top: 2px; }
-  .rate-pill .rate-amount { font-size: 17px; font-weight: 700; color: var(--green); margin-top: 4px; }
+  .rate-pill .rate-amount { font-size: 17px; font-weight: 800; color: var(--green); margin-top: 4px; }
 
   /* ── Cluster chip ── */
-  .cluster-chip { padding: 12px 16px; border-radius: var(--r); margin: 0 0 10px 0; background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .cluster-chip {
+    padding: 12px 16px; border-radius: 14px; margin: 0 0 10px 0;
+    background: rgba(255,255,255,0.75);
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    border: 1px solid rgba(255,255,255,0.7);
+    backdrop-filter: blur(8px);
+  }
 
   /* ── Empty state ── */
-  .empty { text-align: center; padding: 48px 20px; color: var(--label); font-size: 14px; }
-  .empty .empty-icon { font-size: 36px; margin-bottom: 10px; }
-
-  /* ── Inline editable ── */
-  .editable {
-    border: 1px dashed transparent; border-radius: 6px; padding: 1px 4px; margin: -1px -4px;
-    cursor: text; transition: border-color .12s, background .12s;
-  }
-  .editable:hover { border-color: var(--blue); background: #007AFF0C; }
-  .editable:focus { outline: none; border-color: var(--blue); background: #007AFF12; }
-  .editable-amount { color: var(--green); font-weight: 700; }
-
-  /* ── Filter bar ── */
-  .filter-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-  .filter-bar input[type=text] { width: 220px; }
-  .filter-chip {
-    padding: 6px 13px; border-radius: 20px; font-size: 12px; font-weight: 600;
-    background: var(--bg); color: var(--label); cursor: pointer; border: 1.5px solid transparent;
-    transition: all .12s; user-select: none; white-space: nowrap;
-  }
-  .filter-chip:hover { background: #007AFF14; }
-  .filter-chip.active { background: var(--blue); color: #fff; }
-
-  /* ── Invoice text box ── */
-  .invoice-text-box {
-    width: 100%; min-height: 220px; font-family: "SF Mono", Menlo, Consolas, monospace;
-    font-size: 13px; line-height: 1.6; padding: 14px; border-radius: 10px;
-    border: 1.5px solid #E5E5EA; background: #FAFAFB; white-space: pre; resize: vertical;
-  }
+  .empty { text-align: center; padding: 52px 20px; color: var(--label); font-size: 14px; }
+  .empty .empty-icon { font-size: 38px; margin-bottom: 12px; }
+  .empty p { margin-top: 6px; font-size: 13px; }
 
   /* ── Setup screen ── */
   #setup-screen {
-    position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999;
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, #e8eeff 0%, #f2f2f7 50%, #fbe8ff 100%);
+    display: flex; align-items: center; justify-content: center; z-index: 9999;
   }
-  .setup-card { background: #fff; border-radius: 20px; padding: 36px; width: 480px; max-width: 92vw; box-shadow: 0 20px 60px rgba(0,0,0,.12); }
-  .setup-logo { font-size: 32px; font-weight: 800; color: var(--blue); margin-bottom: 6px; }
+  .setup-card {
+    background: rgba(255,255,255,0.88); border-radius: 22px; padding: 38px;
+    width: 500px; max-width: 94vw;
+    box-shadow: 0 24px 80px rgba(0,0,0,.12), 0 0 0 1px rgba(255,255,255,0.6);
+    backdrop-filter: blur(20px);
+  }
+  .setup-logo {
+    font-size: 30px; font-weight: 800; margin-bottom: 6px;
+    background: linear-gradient(135deg, var(--blue), var(--blue2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
   .setup-sub { color: var(--label); font-size: 14px; margin-bottom: 28px; }
   .setup-step { display: flex; gap: 12px; margin-bottom: 18px; align-items: flex-start; }
-  .setup-num { width: 26px; height: 26px; border-radius: 50%; background: var(--blue); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .setup-num { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--blue2)); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
   .setup-step-text { font-size: 13px; line-height: 1.6; color: var(--text); }
   .setup-step-text a { color: var(--blue); }
   .setup-step-text code { background: var(--bg); padding: 1px 6px; border-radius: 5px; font-size: 12px; }
 
   /* ── Toast ── */
   #toast {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-    background: #1C1C1E; color: #fff; padding: 10px 20px; border-radius: 20px;
-    font-size: 13px; font-weight: 500; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 9999;
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: rgba(28,28,30,0.92); color: #fff; padding: 11px 22px; border-radius: 22px;
+    font-size: 13px; font-weight: 500; opacity: 0; transition: opacity .3s;
+    pointer-events: none; z-index: 9999; backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,.2);
   }
   #toast.show { opacity: 1; }
+
+  /* ── Summary bar ── */
+  .summary-gradient {
+    background: linear-gradient(135deg, var(--blue) 0%, var(--blue2) 100%);
+    border-radius: var(--r); padding: 20px 22px; color: #fff; margin-bottom: 20px;
+    box-shadow: 0 8px 32px rgba(0,122,255,0.28);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
 
   /* ── Urgent pulse ── */
   .urgent-row { border-left: 3px solid var(--red); }
@@ -200,46 +313,41 @@
   .check-row { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
   .check-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--red); }
 
+  /* ── Section header ── */
+  .section-header { font-size: 11px; font-weight: 700; color: var(--label); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+
   /* ── Scrollbar ── */
   #content::-webkit-scrollbar { width: 6px; }
   #content::-webkit-scrollbar-track { background: transparent; }
-  #content::-webkit-scrollbar-thumb { background: #C7C7CC; border-radius: 3px; }
+  #content::-webkit-scrollbar-thumb { background: rgba(199,199,204,0.7); border-radius: 3px; }
 
   @media (max-width: 640px) {
     #sidebar { display: none; }
-    #content { padding: 16px; }
+    #content { padding: 14px; }
   }
 </style>
 </head>
 <body>
 
-<!-- Setup screen (shown until Firebase is configured) -->
+<!-- Setup screen -->
 <div id="setup-screen">
   <div class="setup-card">
-    <div class="setup-logo">Invoice</div>
+    <div class="setup-logo">Editor's Department</div>
     <div class="setup-sub">One-time setup — takes about 3 minutes</div>
-
     <div class="setup-step">
       <div class="setup-num">1</div>
-      <div class="setup-step-text">
-        Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → click <strong>Add project</strong> → name it anything (e.g. <em>editorial-hub</em>) → disable Google Analytics → <strong>Create project</strong>.
-      </div>
+      <div class="setup-step-text">Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → <strong>Add project</strong> → name it anything → disable Analytics → <strong>Create project</strong>.</div>
     </div>
     <div class="setup-step">
       <div class="setup-num">2</div>
-      <div class="setup-step-text">
-        Inside the project → click <strong>Build → Realtime Database</strong> → <strong>Create database</strong> → choose any location → start in <strong>Test mode</strong> → Enable.
-      </div>
+      <div class="setup-step-text">Inside project → <strong>Build → Realtime Database</strong> → <strong>Create database</strong> → any location → start in <strong>Test mode</strong> → Enable.</div>
     </div>
     <div class="setup-step">
       <div class="setup-num">3</div>
-      <div class="setup-step-text">
-        Go to <strong>Project Settings</strong> (gear icon) → scroll to <em>Your apps</em> → click the <strong>&lt;/&gt;</strong> Web icon → register app → copy the <code>firebaseConfig</code> object values into the fields below.
-      </div>
+      <div class="setup-step-text"><strong>Project Settings</strong> (gear icon) → <em>Your apps</em> → <strong>&lt;/&gt;</strong> Web icon → register app → copy the <code>firebaseConfig</code> values below.</div>
     </div>
-
     <div class="grid2" style="margin-top:20px">
-      <div class="field"><label>API Key</label><input type="text" id="cfg-apiKey" placeholder="AIzaSy..." /></div>
+      <div class="field"><label>API Key</label><input type="text" id="cfg-apiKey" placeholder="AIzaSy…" /></div>
       <div class="field"><label>Auth Domain</label><input type="text" id="cfg-authDomain" placeholder="project.firebaseapp.com" /></div>
       <div class="field"><label>Database URL</label><input type="text" id="cfg-dbUrl" placeholder="https://project-default-rtdb.firebaseio.com" /></div>
       <div class="field"><label>Project ID</label><input type="text" id="cfg-projectId" placeholder="my-project-id" /></div>
@@ -248,7 +356,7 @@
       <div class="field"><label>App ID</label><input type="text" id="cfg-appId" placeholder="1:123:web:abc" /></div>
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="saveConfig()">Connect & Launch →</button>
-    <p style="font-size:12px;color:var(--label);margin-top:10px;text-align:center">Your config is saved in your browser. Free Firebase tier supports up to 100 simultaneous users.</p>
+    <p style="font-size:12px;color:var(--label);margin-top:10px;text-align:center">Config saved in your browser. Free Firebase tier supports up to 100 simultaneous users.</p>
   </div>
 </div>
 
@@ -290,30 +398,30 @@
 </div>
 
 <div id="toast"></div>
-
-<!-- Modal container -->
 <div id="modal-root"></div>
 
 <script>
-// ── Rate types ──────────────────────────────────────────────────────────────
-const RATE_TYPES = [
-  { id: "week1_2",      label: "Week 1–2",        reels: 7,  rate: 2.50 },
-  { id: "week3",        label: "Week 3",           reels: 14, rate: 4.00 },
-  { id: "post_schedule",label: "Post Schedule",    reels: 21, rate: 6.00 },
-  { id: "full_ops",     label: "Full Operations",  reels: 56, rate: 12.00 },
+// ── Rate types (editable) ────────────────────────────────────────────────────
+let RATE_TYPES = [
+  { id: "week1_2",       label: "Week 1–2",        reels: 7,  rate: 2.50 },
+  { id: "week3",         label: "Week 3",           reels: 14, rate: 4.00 },
+  { id: "post_schedule", label: "Post Schedule",    reels: 21, rate: 6.00 },
+  { id: "full_ops",      label: "Full Operations",  reels: 56, rate: 12.00 },
 ];
 
-// ── State ───────────────────────────────────────────────────────────────────
+// persist rate customisations per device
+const savedRates = localStorage.getItem("eh_rates");
+if (savedRates) {
+  try { RATE_TYPES = JSON.parse(savedRates); } catch(_) {}
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
 let DB = null;
 let state = { editors:{}, creators:{}, accounts:{}, clusters:{}, assignments:{}, extras:{} };
 let currentTab = "editors";
-let filters = {
-  editors:  { search: "" },
-  accounts: { search: "", cluster: "all" },
-  invoices: { search: "", cluster: "all" }
-};
+let filterState = { search: "", cluster: "all", editor: "all" };
 
-// ── Firebase config storage ─────────────────────────────────────────────────
+// ── Firebase config ──────────────────────────────────────────────────────────
 function saveConfig() {
   const cfg = {
     apiKey:            document.getElementById("cfg-apiKey").value.trim(),
@@ -324,34 +432,32 @@ function saveConfig() {
     messagingSenderId: document.getElementById("cfg-messagingSenderId").value.trim(),
     appId:             document.getElementById("cfg-appId").value.trim(),
   };
-  if (!cfg.apiKey || !cfg.databaseURL) { toast("Please fill in at least API Key and Database URL"); return; }
+  if (!cfg.apiKey || !cfg.databaseURL) { toast("Fill in at least API Key and Database URL"); return; }
   localStorage.setItem("eh_firebase_cfg", JSON.stringify(cfg));
   initFirebase(cfg);
 }
 
 function initFirebase(cfg) {
   try {
-    const app = firebase.initializeApp(cfg);
+    firebase.initializeApp(cfg);
     DB = firebase.database();
     document.getElementById("setup-screen").style.display = "none";
     listenAll();
   } catch(e) {
     toast("Firebase error: " + e.message);
-    console.error(e);
   }
 }
 
-// ── Firebase listeners ──────────────────────────────────────────────────────
 function listenAll() {
   setSyncing(true);
   DB.ref("/").on("value", snap => {
     const data = snap.val() || {};
-    state.editors    = data.editors    || {};
-    state.creators   = data.creators   || {};
-    state.accounts   = data.accounts   || {};
-    state.clusters   = data.clusters   || {};
-    state.assignments= data.assignments|| {};
-    state.extras     = data.extras     || {};
+    state.editors     = data.editors     || {};
+    state.creators    = data.creators    || {};
+    state.accounts    = data.accounts    || {};
+    state.clusters    = data.clusters    || {};
+    state.assignments = data.assignments || {};
+    state.extras      = data.extras      || {};
     setSyncing(false);
     updateFooter();
     updateUrgentBadge();
@@ -366,22 +472,22 @@ function setSyncing(on) {
   else     { dot.className = "sync-dot";         lbl.textContent = "Live sync on"; }
 }
 
-// ── DB helpers ──────────────────────────────────────────────────────────────
-function uid() { return DB.ref().push().key; }
-function set(path, val)    { setSyncing(true); return DB.ref(path).set(val); }
-function remove(path)      { setSyncing(true); return DB.ref(path).remove(); }
-function update(path, val) { setSyncing(true); return DB.ref(path).update(val); }
+// ── DB helpers ───────────────────────────────────────────────────────────────
+function uid()         { return DB.ref().push().key; }
+function set(p, v)     { setSyncing(true); return DB.ref(p).set(v); }
+function remove(p)     { setSyncing(true); return DB.ref(p).remove(); }
+function dbUpdate(p,v) { setSyncing(true); return DB.ref(p).update(v); }
 
-// ── Tab switching ───────────────────────────────────────────────────────────
+// ── Tab & filter ─────────────────────────────────────────────────────────────
 const TAB_LABELS = { editors:"👤 Editors", accounts:"📁 Accounts", extras:"⚡ Extra Tasks", invoices:"🧾 Invoices" };
 function switchTab(tab) {
   currentTab = tab;
+  filterState = { search: "", cluster: "all", editor: "all" };
   document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
   document.getElementById("nav-" + tab).classList.add("active");
   document.getElementById("header-title").textContent = TAB_LABELS[tab];
   render();
 }
-
 function render() {
   if (currentTab === "editors")  renderEditors();
   if (currentTab === "accounts") renderAccounts();
@@ -389,22 +495,22 @@ function render() {
   if (currentTab === "invoices") renderInvoices();
 }
 
-// ── Footer ──────────────────────────────────────────────────────────────────
+// ── Footer ───────────────────────────────────────────────────────────────────
 function updateFooter() {
   document.getElementById("footer-editors").textContent  = Object.keys(state.editors).length  + " editors";
   document.getElementById("footer-accounts").textContent = Object.keys(state.accounts).length + " accounts";
   document.getElementById("footer-clusters").textContent = Object.keys(state.clusters).length + " clusters";
 }
 function updateUrgentBadge() {
-  const urgentCount = Object.values(state.extras).filter(t => t.urgent).length;
-  const badge = document.getElementById("urgent-badge");
-  badge.style.display = urgentCount ? "inline-block" : "none";
-  badge.textContent = urgentCount;
+  const n = Object.values(state.extras).filter(t => t.urgent).length;
+  const b = document.getElementById("urgent-badge");
+  b.style.display = n ? "inline-block" : "none";
+  b.textContent = n;
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function rateType(id)   { return RATE_TYPES.find(t => t.id === id) || RATE_TYPES[0]; }
-function editorName(id) { return (state.editors[id] || {}).name || "Unknown"; }
+function editorName(id) { return (state.editors[id]  || {}).name || "Unknown"; }
 function creatorName(id){ return (state.creators[id] || {}).name || "Unknown"; }
 function clusterFor(num) {
   return Object.values(state.clusters).find(c => num >= c.range[0] && num <= c.range[1]) || null;
@@ -419,28 +525,7 @@ function toast(msg, dur=2800) {
   setTimeout(() => el.classList.remove("show"), dur);
 }
 
-// ── Inline-edit helpers ─────────────────────────────────────────────────────
-// Attach to a contenteditable span/div: onblur="commitEdit(this,'/path','field','number'|'text')"
-function commitEdit(el, path, field, kind) {
-  let val = el.textContent.trim();
-  if (kind === "number") {
-    val = parseFloat(val);
-    if (isNaN(val)) { toast("Enter a valid number"); render(); return; }
-  }
-  if (kind === "int") {
-    val = parseInt(val);
-    if (isNaN(val)) { toast("Enter a valid number"); render(); return; }
-  }
-  if (val === "" ) { toast("Value can't be empty"); render(); return; }
-  update(path, { [field]: val }).then(() => toast("Saved"));
-}
-function editKeydown(e) {
-  if (e.key === "Enter") { e.preventDefault(); e.target.blur(); }
-  if (e.key === "Escape") { e.preventDefault(); render(); }
-}
-
-
-// ── Modal ───────────────────────────────────────────────────────────────────
+// ── Modal ────────────────────────────────────────────────────────────────────
 function openModal(html, onSubmit) {
   const root = document.getElementById("modal-root");
   root.innerHTML = `<div class="modal-overlay" id="modal-overlay"><div class="modal">${html}</div></div>`;
@@ -456,32 +541,57 @@ function openModal(html, onSubmit) {
 }
 function closeModal() { document.getElementById("modal-root").innerHTML = ""; }
 
+// ── Inline edit helper ────────────────────────────────────────────────────────
+function makeEditable(el, onSave) {
+  el.classList.add("editable");
+  el.title = "Click to edit";
+  el.addEventListener("click", function startEdit(e) {
+    e.stopPropagation();
+    const current = el.textContent.trim();
+    const inp = document.createElement("input");
+    inp.className = "editable-input";
+    inp.value = current;
+    inp.style.fontSize = getComputedStyle(el).fontSize;
+    inp.style.fontWeight = getComputedStyle(el).fontWeight;
+    el.replaceWith(inp);
+    inp.focus(); inp.select();
+    function commit() {
+      const val = inp.value.trim();
+      if (val && val !== current) onSave(val);
+      inp.replaceWith(el);
+      el.textContent = val || current;
+    }
+    inp.addEventListener("blur", commit);
+    inp.addEventListener("keydown", e2 => {
+      if (e2.key === "Enter") { e2.preventDefault(); commit(); }
+      if (e2.key === "Escape") { inp.replaceWith(el); }
+    });
+  });
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // EDITORS TAB
 // ══════════════════════════════════════════════════════════════════════════════
 function renderEditors() {
-  const allEditors = Object.entries(state.editors);
-  const search = filters.editors.search.toLowerCase();
-  const editors = allEditors.filter(([,e]) => !search || e.name.toLowerCase().includes(search));
+  const searchQ = (filterState.search || "").toLowerCase();
+  const editors = Object.entries(state.editors)
+    .filter(([,e]) => !searchQ || e.name.toLowerCase().includes(searchQ));
 
   let html = `
-    <div class="row-between" style="margin-bottom:14px">
+    <div class="row-between" style="margin-bottom:16px">
       <div>
         <div style="font-size:18px;font-weight:700">Editors</div>
-        <div style="font-size:13px;color:var(--label);margin-top:3px">Your content editing team</div>
+        <div style="font-size:13px;color:var(--label);margin-top:2px">Your content editing team</div>
       </div>
       <button class="btn btn-primary" onclick="addEditorModal()">+ Add Editor</button>
     </div>
     <div class="filter-bar">
-      <input type="text" placeholder="🔍 Search editors..." value="${filters.editors.search}"
-        oninput="filters.editors.search=this.value; renderEditors();" />
-      <span style="font-size:12px;color:var(--label)">${editors.length} of ${allEditors.length}</span>
+      <input type="text" placeholder="🔍  Search editors…" value="${filterState.search}"
+        oninput="filterState.search=this.value; renderEditors()" />
     </div>`;
 
-  if (!allEditors.length) {
-    html += `<div class="card empty"><div class="empty-icon">👤</div>No editors yet — add your first one.</div>`;
-  } else if (!editors.length) {
-    html += `<div class="card empty"><div class="empty-icon">🔍</div>No editors match "${filters.editors.search}".</div>`;
+  if (!editors.length) {
+    html += `<div class="card empty"><div class="empty-icon">👤</div>No editors yet.<p>Add your first editor to get started.</p></div>`;
   }
 
   editors.forEach(([eid, editor]) => {
@@ -491,13 +601,13 @@ function renderEditors() {
     const urgentCount = Object.values(state.extras).filter(t => t.editorId === eid && t.urgent).length;
 
     let tagsHtml = "";
-    myAccounts.slice(0, 6).forEach(ac => {
+    myAccounts.slice(0, 5).forEach(ac => {
       const cl = clusterFor(ac.number);
       const rt = rateType(ac.type);
       const col = cl ? cl.color : "#8E8E93";
       tagsHtml += `<span class="tag" style="${tagStyle(col)}">#${ac.number} ${rt.label}</span>`;
     });
-    if (myAccounts.length > 6) tagsHtml += `<span class="tag" style="background:var(--bg);color:var(--label)">+${myAccounts.length - 6} more</span>`;
+    if (myAccounts.length > 5) tagsHtml += `<span class="tag" style="background:var(--bg);color:var(--label)">+${myAccounts.length-5} more</span>`;
 
     html += `
       <div class="card">
@@ -505,14 +615,12 @@ function renderEditors() {
           <div class="row">
             <div class="editor-avatar">${initials(editor.name)}</div>
             <div>
-              <div style="font-weight:600;font-size:15px">
-                <span class="editable" contenteditable="true" spellcheck="false"
-                  onblur="commitEdit(this,'/editors/${eid}','name','text')" onkeydown="editKeydown(event)">${editor.name}</span>
+              <div style="font-weight:700;font-size:16px" id="ename-${eid}">${editor.name}
                 ${urgentCount ? `<span class="badge" style="background:#FF3B3018;color:var(--red);margin-left:6px">🔴 ${urgentCount} urgent</span>` : ""}
               </div>
               <div style="font-size:13px;color:var(--label);margin-top:2px">
                 ${myAccounts.length} account${myAccounts.length !== 1 ? "s" : ""} &nbsp;·&nbsp;
-                <span style="color:var(--green);font-weight:600">${fmt(weeklyTotal)}/wk</span>
+                <span style="color:var(--green);font-weight:700">${fmt(weeklyTotal)}/wk</span>
               </div>
             </div>
           </div>
@@ -523,6 +631,14 @@ function renderEditors() {
   });
 
   document.getElementById("content").innerHTML = html;
+
+  // attach inline edit for editor names
+  editors.forEach(([eid, editor]) => {
+    const el = document.getElementById("ename-" + eid);
+    if (el) makeEditable(el, val => {
+      set(`/editors/${eid}/name`, val).then(() => toast("Name updated"));
+    });
+  });
 }
 
 function addEditorModal() {
@@ -532,27 +648,26 @@ function addEditorModal() {
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="field"><label>Full Name</label>
-      <input type="text" id="m-name" placeholder="e.g. Sarah Johnson" />
+      <input type="text" id="m-name" placeholder="e.g. Angela Santos" />
     </div>
     <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" id="modal-submit">Add Editor</button>
     </div>`,
     () => {
       const name = document.getElementById("m-name").value.trim();
       if (!name) return;
-      const id = uid();
-      set(`/editors/${id}`, { name }).then(() => { toast("Editor added"); closeModal(); });
+      set(`/editors/${uid()}`, { name }).then(() => { toast("Editor added"); closeModal(); });
     }
   );
 }
 
 function removeEditor(eid) {
-  if (!confirm("Remove this editor? Their assignments and tasks will also be removed.")) return;
+  if (!confirm("Remove this editor and all their assignments/tasks?")) return;
   const batch = {};
   batch[`/editors/${eid}`] = null;
-  Object.entries(state.assignments).forEach(([k, a]) => { if (a.editorId === eid) batch[`/assignments/${k}`] = null; });
-  Object.entries(state.extras).forEach(([k, t])     => { if (t.editorId === eid)  batch[`/extras/${k}`] = null; });
+  Object.entries(state.assignments).forEach(([k,a]) => { if (a.editorId === eid) batch[`/assignments/${k}`] = null; });
+  Object.entries(state.extras).forEach(([k,t])     => { if (t.editorId === eid)  batch[`/extras/${k}`] = null; });
   DB.ref().update(batch).then(() => toast("Editor removed"));
 }
 
@@ -560,70 +675,75 @@ function removeEditor(eid) {
 // ACCOUNTS TAB
 // ══════════════════════════════════════════════════════════════════════════════
 function renderAccounts() {
+  const searchQ = (filterState.search || "").toLowerCase();
+  const fCluster = filterState.cluster || "all";
+  const fEditor  = filterState.editor  || "all";
+  const clusters = Object.entries(state.clusters);
+  const editors  = Object.entries(state.editors);
+
+  let filterHtml = `
+    <div class="filter-bar">
+      <input type="text" placeholder="🔍  Search accounts or creators…" value="${filterState.search}"
+        oninput="filterState.search=this.value; renderAccounts()" />
+      <select class="filter-select" onchange="filterState.cluster=this.value; renderAccounts()">
+        <option value="all" ${fCluster==='all'?'selected':''}>All Clusters</option>
+        ${clusters.map(([cid,cl]) => `<option value="${cid}" ${fCluster===cid?'selected':''}>${cl.name}</option>`).join('')}
+      </select>
+      <select class="filter-select" onchange="filterState.editor=this.value; renderAccounts()">
+        <option value="all" ${fEditor==='all'?'selected':''}>All Editors</option>
+        <option value="unassigned" ${fEditor==='unassigned'?'selected':''}>Unassigned</option>
+        ${editors.map(([eid,e]) => `<option value="${eid}" ${fEditor===eid?'selected':''}>${e.name}</option>`).join('')}
+      </select>
+    </div>`;
+
   let html = `
-    <!-- Clusters section -->
     <div class="row-between" style="margin-bottom:12px">
       <div style="font-size:18px;font-weight:700">Account Clusters</div>
       <button class="btn btn-primary" onclick="addClusterModal()">+ Add Cluster</button>
     </div>
-    <div class="row" style="margin-bottom:24px;gap:10px;flex-wrap:wrap">`;
+    <div class="row" style="margin-bottom:22px;gap:10px;flex-wrap:wrap">`;
 
-  const clusters = Object.entries(state.clusters);
   if (!clusters.length) html += `<span style="color:var(--label);font-size:14px">No clusters yet.</span>`;
   clusters.forEach(([cid, cl]) => {
     const count = Object.values(state.accounts).filter(a => a.number >= cl.range[0] && a.number <= cl.range[1]).length;
     html += `
-      <div class="cluster-chip" style="border-left:4px solid ${cl.color};min-width:150px">
-        <div style="font-weight:700;color:${cl.color};font-size:15px">
-          <span class="editable" contenteditable="true" spellcheck="false"
-            onblur="commitEdit(this,'/clusters/${cid}','name','text')" onkeydown="editKeydown(event)">${cl.name}</span>
-        </div>
-        <div style="font-size:12px;color:var(--label);margin-top:2px">
-          Accounts #<span class="editable" contenteditable="true" spellcheck="false" style="display:inline"
-            onblur="commitClusterRange(this,'${cid}',0)" onkeydown="editKeydown(event)">${cl.range[0]}</span>–#<span class="editable" contenteditable="true" spellcheck="false" style="display:inline"
-            onblur="commitClusterRange(this,'${cid}',1)" onkeydown="editKeydown(event)">${cl.range[1]}</span>
-        </div>
-        <div style="font-size:13px;margin-top:2px">${count} account${count !== 1 ? "s" : ""}</div>
+      <div class="cluster-chip" style="border-left:4px solid ${cl.color};min-width:155px">
+        <div style="font-weight:700;color:${cl.color};font-size:15px" id="cname-${cid}">${cl.name}</div>
+        <div style="font-size:12px;color:var(--label);margin-top:2px">Accounts #${cl.range[0]}–#${cl.range[1]}</div>
+        <div style="font-size:13px;margin-top:2px;font-weight:600">${count} account${count !== 1 ? "s" : ""}</div>
         <button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="removeCluster('${cid}')">Remove</button>
       </div>`;
   });
 
   html += `</div>
-    <!-- Accounts section -->
     <div class="row-between" style="margin-bottom:12px">
       <div style="font-size:18px;font-weight:700">Accounts</div>
       <button class="btn btn-primary" onclick="addAccountModal()">+ Add Account</button>
     </div>
-    <div class="filter-bar">
-      <input type="text" placeholder="🔍 Search accounts or editors..." value="${filters.accounts.search}"
-        oninput="filters.accounts.search=this.value; renderAccounts();" />
-      <span class="filter-chip ${filters.accounts.cluster==='all'?'active':''}" onclick="filters.accounts.cluster='all'; renderAccounts();">All</span>`;
-  clusters.forEach(([cid, cl]) => {
-    const active = filters.accounts.cluster === cid;
-    html += `<span class="filter-chip ${active?'active':''}" style="${active?`background:${cl.color};color:#fff;`:`background:${cl.color}18;color:${cl.color};`}"
-      onclick="filters.accounts.cluster='${cid}'; renderAccounts();">${cl.name}</span>`;
-  });
-  html += `</div>`;
+    ${filterHtml}`;
 
-  const search = filters.accounts.search.toLowerCase();
   let accounts = Object.entries(state.accounts).sort((a,b) => a[1].number - b[1].number);
-  if (filters.accounts.cluster !== "all") {
-    const cl = state.clusters[filters.accounts.cluster];
-    if (cl) accounts = accounts.filter(([,ac]) => ac.number >= cl.range[0] && ac.number <= cl.range[1]);
-  }
-  if (search) {
-    accounts = accounts.filter(([,ac]) => {
-      const assignment = Object.values(state.assignments).find(a => a.accountId === Object.keys(state.accounts).find(k=>state.accounts[k]===ac));
-      const edName = assignment ? editorName(assignment.editorId).toLowerCase() : "";
-      return creatorName(ac.creatorId).toLowerCase().includes(search) ||
-             String(ac.number).includes(search) || edName.includes(search);
-    });
-  }
 
-  if (!Object.keys(state.accounts).length) {
-    html += `<div class="card empty"><div class="empty-icon">📁</div>No accounts yet.</div>`;
-  } else if (!accounts.length) {
-    html += `<div class="card empty"><div class="empty-icon">🔍</div>No accounts match your filters.</div>`;
+  // apply filters
+  accounts = accounts.filter(([acid, ac]) => {
+    if (searchQ) {
+      const cname = creatorName(ac.creatorId).toLowerCase();
+      if (!cname.includes(searchQ) && !String(ac.number).includes(searchQ)) return false;
+    }
+    if (fCluster !== "all") {
+      const cl = Object.entries(state.clusters).find(([cid]) => cid === fCluster)?.[1];
+      if (!cl || ac.number < cl.range[0] || ac.number > cl.range[1]) return false;
+    }
+    if (fEditor !== "all") {
+      const assignment = Object.values(state.assignments).find(a => a.accountId === acid);
+      if (fEditor === "unassigned") { if (assignment) return false; }
+      else { if (!assignment || assignment.editorId !== fEditor) return false; }
+    }
+    return true;
+  });
+
+  if (!accounts.length) {
+    html += `<div class="card empty"><div class="empty-icon">📁</div>No accounts match your filters.</div>`;
   }
 
   accounts.forEach(([acid, ac]) => {
@@ -632,23 +752,18 @@ function renderAccounts() {
     const col = cl ? cl.color : "#8E8E93";
     const assignment = Object.values(state.assignments).find(a => a.accountId === acid);
     const assignedEditor = assignment ? state.editors[assignment.editorId] : null;
-    const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}" ${t.id===ac.type?"selected":""}>${t.label}</option>`).join("");
 
     html += `
       <div class="account-row">
-        <div class="account-num" style="background:${col}20;color:${col}">#<span class="editable" contenteditable="true" spellcheck="false" style="display:inline"
-          onblur="commitEdit(this,'/accounts/${acid}','number','int')" onkeydown="editKeydown(event)">${ac.number}</span></div>
+        <div class="account-num" style="background:${col}22;color:${col}">#${ac.number}</div>
         <div class="account-info">
           <div class="name">
-            <span class="editable" contenteditable="true" spellcheck="false"
-              onblur="commitEdit(this,'/creators/${ac.creatorId}','name','text')" onkeydown="editKeydown(event)">${creatorName(ac.creatorId)}</span>
+            <span id="acreator-${acid}">${creatorName(ac.creatorId)}</span>
             ${cl ? `<span class="tag" style="${tagStyle(col)};margin-left:6px">${cl.name}</span>` : ""}
           </div>
           <div class="meta">
-            <select onchange="update('/accounts/${acid}',{type:this.value}).then(()=>{toast('Saved');render()})" style="display:inline-block;width:auto;padding:2px 6px;font-size:12px;border-radius:6px;border:1px solid #E5E5EA">${typeOpts}</select>
-            · !${rt.reels} reels ·
-            <span class="editable editable-amount" contenteditable="true" spellcheck="false"
-              onblur="commitRate('${ac.type}','rate',this,'number')" onkeydown="editKeydown(event)">${rt.rate.toFixed(2)}</span>/wk
+            <span id="actype-label-${acid}">${rt.label}</span> · ${rt.reels} reels ·
+            <span style="color:var(--green);font-weight:700" id="acrate-${acid}">${fmt(rt.rate)}/wk</span>
             ${assignedEditor ? `· <strong>${assignedEditor.name}</strong>` : `· <span style="color:var(--orange)">Unassigned</span>`}
           </div>
         </div>
@@ -656,72 +771,60 @@ function renderAccounts() {
           <button class="btn btn-secondary btn-sm" onclick="assignModal('${acid}','${assignment ? assignment.editorId : ""}')">
             ${assignedEditor ? "Reassign" : "Assign"}
           </button>
-          <button class="btn btn-danger btn-sm" onclick="removeAccount('${acid}')">×</button>
+          <button class="btn btn-danger btn-sm" onclick="removeAccount('${acid}')">✕</button>
         </div>
       </div>`;
   });
 
-  // Rate reference
+  // Rate reference (editable)
   html += `
     <div class="card" style="margin-top:20px">
-      <div class="card-title">Rate Reference <span style="font-weight:400;color:var(--label);font-size:12px">(click to edit)</span></div>
+      <div class="card-title">Rate Reference <span style="font-size:11px;color:var(--label);font-weight:500;text-transform:none">(click any value to edit)</span></div>
       <div class="grid2">`;
-  RATE_TYPES.forEach(t => {
+  RATE_TYPES.forEach((t, i) => {
     html += `
       <div class="rate-pill">
-        <div class="rate-label">
-          <span class="editable" contenteditable="true" spellcheck="false"
-            onblur="commitRate('${t.id}','label',this,'text')" onkeydown="editKeydown(event)">${t.label}</span>
-        </div>
-        <div class="rate-reels">!<span class="editable" contenteditable="true" spellcheck="false" style="display:inline"
-            onblur="commitRate('${t.id}','reels',this,'int')" onkeydown="editKeydown(event)">${t.reels}</span> reels</div>
-        <div class="rate-amount">$<span class="editable editable-amount" contenteditable="true" spellcheck="false" style="display:inline"
-            onblur="commitRate('${t.id}','rate',this,'number')" onkeydown="editKeydown(event)">${t.rate.toFixed(2)}</span>/wk</div>
+        <div class="rate-label" id="rl-label-${i}">${t.label}</div>
+        <div class="rate-reels"><span id="rl-reels-${i}">${t.reels}</span> reels</div>
+        <div class="rate-amount" id="rl-rate-${i}">${fmt(t.rate)}/wk</div>
       </div>`;
   });
   html += `</div></div>`;
 
   document.getElementById("content").innerHTML = html;
+
+  // Inline edit cluster names
+  clusters.forEach(([cid]) => {
+    const el = document.getElementById("cname-" + cid);
+    if (el) makeEditable(el, val => set(`/clusters/${cid}/name`, val).then(() => toast("Cluster renamed")));
+  });
+
+  // Inline edit creator names
+  accounts.forEach(([acid, ac]) => {
+    const el = document.getElementById("acreator-" + acid);
+    if (el) makeEditable(el, val => {
+      set(`/creators/${ac.creatorId}/name`, val).then(() => toast("Creator name updated"));
+    });
+  });
+
+  // Inline edit rate types
+  RATE_TYPES.forEach((t, i) => {
+    const labelEl = document.getElementById("rl-label-" + i);
+    const reelsEl = document.getElementById("rl-reels-" + i);
+    const rateEl  = document.getElementById("rl-rate-"  + i);
+    if (labelEl) makeEditable(labelEl, val => { RATE_TYPES[i].label = val; saveRates(); toast("Label updated"); });
+    if (reelsEl) makeEditable(reelsEl, val => {
+      const n = parseInt(val);
+      if (!isNaN(n)) { RATE_TYPES[i].reels = n; saveRates(); toast("Reels updated"); }
+    });
+    if (rateEl) makeEditable(rateEl, val => {
+      const n = parseFloat(val.replace(/[^0-9.]/g, ""));
+      if (!isNaN(n)) { RATE_TYPES[i].rate = n; saveRates(); toast("Rate updated"); render(); }
+    });
+  });
 }
 
-// Rate types are app-level constants (not in Firebase) — edits persist to localStorage.
-function commitRate(typeId, field, el, kind) {
-  const rt = RATE_TYPES.find(t => t.id === typeId);
-  if (!rt) return;
-  let val = el.textContent.trim();
-  if (kind === "number" || kind === "int") {
-    val = kind === "int" ? parseInt(val) : parseFloat(val);
-    if (isNaN(val)) { toast("Enter a valid number"); render(); return; }
-  }
-  if (val === "") { toast("Value can't be empty"); render(); return; }
-  rt[field] = val;
-  saveRateTypes();
-  toast("Saved");
-  render();
-}
-function commitClusterRange(el, cid, idx) {
-  const val = parseInt(el.textContent.trim());
-  if (isNaN(val)) { toast("Enter a valid number"); render(); return; }
-  const cl = state.clusters[cid];
-  if (!cl) return;
-  const range = [...cl.range];
-  range[idx] = val;
-  update(`/clusters/${cid}`, { range }).then(() => toast("Saved"));
-}
-function saveRateTypes() {
-  localStorage.setItem("eh_ratetypes", JSON.stringify(RATE_TYPES));
-}
-function loadRateTypes() {
-  const saved = localStorage.getItem("eh_ratetypes");
-  if (!saved) return;
-  try {
-    const parsed = JSON.parse(saved);
-    parsed.forEach(p => {
-      const rt = RATE_TYPES.find(t => t.id === p.id);
-      if (rt) Object.assign(rt, p);
-    });
-  } catch(e) {}
-}
+function saveRates() { localStorage.setItem("eh_rates", JSON.stringify(RATE_TYPES)); }
 
 function addClusterModal() {
   openModal(`
@@ -732,14 +835,14 @@ function addClusterModal() {
     <div class="field"><label>Cluster Name</label><input type="text" id="m-cname" placeholder="e.g. Cluster C" /></div>
     <div class="grid2">
       <div class="field"><label>From Account #</label><input type="number" id="m-cstart" placeholder="1" /></div>
-      <div class="field"><label>To Account #</label><input type="number" id="m-cend" placeholder="5" /></div>
+      <div class="field"><label>To Account #</label><input type="number" id="m-cend" placeholder="10" /></div>
     </div>
     <div class="field"><label>Colour</label>
       <div class="row"><input type="color" id="m-ccolor" value="#007AFF" style="width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px" />
-      <span style="font-size:13px;color:var(--label)">Pick a colour for this cluster</span></div>
+        <span style="font-size:13px;color:var(--label)">Pick a colour for this cluster</span></div>
     </div>
     <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" id="modal-submit">Add Cluster</button>
     </div>`,
     () => {
@@ -748,8 +851,7 @@ function addClusterModal() {
       const end   = parseInt(document.getElementById("m-cend").value);
       const color = document.getElementById("m-ccolor").value;
       if (!name || isNaN(start) || isNaN(end)) return;
-      const id = uid();
-      set(`/clusters/${id}`, { name, range: [start, end], color }).then(() => { toast("Cluster added"); closeModal(); });
+      set(`/clusters/${uid()}`, { name, range: [start, end], color }).then(() => { toast("Cluster added"); closeModal(); });
     }
   );
 }
@@ -761,22 +863,22 @@ function removeCluster(cid) {
 
 function addAccountModal() {
   const editorsOpts = Object.entries(state.editors).map(([id,e]) => `<option value="${id}">${e.name}</option>`).join("");
-  const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}">${t.label} — !${t.reels} reels · ${fmt(t.rate)}/wk</option>`).join("");
+  const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}">${t.label} — ${t.reels} reels · ${fmt(t.rate)}/wk</option>`).join("");
   openModal(`
     <div class="modal-header">
       <span class="modal-title">Add Account</span>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="grid2">
-      <div class="field"><label>Account Number</label><input type="number" id="m-anum" placeholder="e.g. 6" /></div>
-      <div class="field"><label>Creator Name</label><input type="text" id="m-creator" placeholder="e.g. @brandname" /></div>
+      <div class="field"><label>Account #</label><input type="number" id="m-anum" placeholder="6" /></div>
+      <div class="field"><label>Creator Name</label><input type="text" id="m-creator" placeholder="@brandname" /></div>
     </div>
     <div class="field"><label>Account Type</label><select id="m-atype">${typeOpts}</select></div>
     <div class="field"><label>Assign Editor (optional)</label>
       <select id="m-aeditor"><option value="">— Assign later —</option>${editorsOpts}</select>
     </div>
     <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" id="modal-submit">Add Account</button>
     </div>`,
     () => {
@@ -785,17 +887,15 @@ function addAccountModal() {
       const type    = document.getElementById("m-atype").value;
       const edId    = document.getElementById("m-aeditor").value;
       if (!creator || isNaN(num)) return;
-
-      // find or create creator
       let creatorId = Object.entries(state.creators).find(([,c]) => c.name.toLowerCase() === creator.toLowerCase())?.[0];
-      const doCreate = (cid) => {
-        const aid = uid();
+      const doCreate = cid => {
+        const aid   = uid();
         const batch = {};
         batch[`/accounts/${aid}`] = { number: num, creatorId: cid, type };
         if (edId) batch[`/assignments/${uid()}`] = { editorId: edId, accountId: aid };
         DB.ref().update(batch).then(() => { toast("Account added"); closeModal(); });
       };
-      if (creatorId) { doCreate(creatorId); }
+      if (creatorId) doCreate(creatorId);
       else {
         creatorId = uid();
         set(`/creators/${creatorId}`, { name: creator }).then(() => doCreate(creatorId));
@@ -823,18 +923,16 @@ function assignModal(acid, currentEditorId) {
       <select id="m-editor"><option value="">— Choose editor —</option>${opts}</select>
     </div>
     <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" id="modal-submit">Assign</button>
     </div>`,
     () => {
       const edId = document.getElementById("m-editor").value;
       if (!edId) return;
-      // remove existing assignment for this account
       const existing = Object.entries(state.assignments).find(([,a]) => a.accountId === acid);
       const batch = {};
       if (existing) batch[`/assignments/${existing[0]}`] = null;
-      const newKey = uid();
-      batch[`/assignments/${newKey}`] = { editorId: edId, accountId: acid };
+      batch[`/assignments/${uid()}`] = { editorId: edId, accountId: acid };
       DB.ref().update(batch).then(() => { toast("Editor assigned"); closeModal(); });
     }
   );
@@ -844,19 +942,33 @@ function assignModal(acid, currentEditorId) {
 // EXTRA TASKS TAB
 // ══════════════════════════════════════════════════════════════════════════════
 function renderExtras() {
-  const tasks = Object.entries(state.extras).sort((a,b) => (b[1].urgent?1:0) - (a[1].urgent?1:0));
+  const fEditor = filterState.editor || "all";
+  const searchQ = (filterState.search || "").toLowerCase();
+  const editors = Object.entries(state.editors);
+
+  let tasks = Object.entries(state.extras).sort((a,b) => (b[1].urgent?1:0) - (a[1].urgent?1:0));
+  if (fEditor !== "all") tasks = tasks.filter(([,t]) => t.editorId === fEditor);
+  if (searchQ) tasks = tasks.filter(([,t]) => t.description.toLowerCase().includes(searchQ));
 
   let html = `
-    <div class="row-between" style="margin-bottom:20px">
+    <div class="row-between" style="margin-bottom:16px">
       <div>
         <div style="font-size:18px;font-weight:700">Extra & Urgent Tasks</div>
-        <div style="font-size:13px;color:var(--label);margin-top:3px">Additional work beyond regular accounts</div>
+        <div style="font-size:13px;color:var(--label);margin-top:2px">Additional work beyond regular accounts</div>
       </div>
       <button class="btn btn-primary" onclick="addExtraModal()">+ Add Task</button>
+    </div>
+    <div class="filter-bar">
+      <input type="text" placeholder="🔍  Search tasks…" value="${filterState.search}"
+        oninput="filterState.search=this.value; renderExtras()" />
+      <select class="filter-select" onchange="filterState.editor=this.value; renderExtras()">
+        <option value="all" ${fEditor==='all'?'selected':''}>All Editors</option>
+        ${editors.map(([eid,e]) => `<option value="${eid}" ${fEditor===eid?'selected':''}>${e.name}</option>`).join('')}
+      </select>
     </div>`;
 
   if (!tasks.length) {
-    html += `<div class="card empty"><div class="empty-icon">⚡</div>No extra tasks logged yet.</div>`;
+    html += `<div class="card empty"><div class="empty-icon">⚡</div>No extra tasks match your filters.</div>`;
   }
 
   tasks.forEach(([tid, task]) => {
@@ -867,27 +979,28 @@ function renderExtras() {
         <div class="row-between">
           <div style="flex:1;min-width:0">
             <div class="row" style="margin-bottom:4px">
-              ${task.urgent ? `<span class="badge" style="background:#FF3B3018;color:var(--red)">🔴 URGENT</span>` : `<span class="badge" style="background:#007AFF12;color:var(--blue)">Extra</span>`}
-              <span style="font-weight:600;font-size:15px">${task.description}</span>
+              ${task.urgent
+                ? `<span class="badge" style="background:#FF3B3018;color:var(--red)">🔴 URGENT</span>`
+                : `<span class="badge" style="background:#007AFF12;color:var(--blue)">Extra</span>`}
+              <span style="font-weight:600;font-size:15px" id="tdesc-${tid}">${task.description}</span>
             </div>
             <div style="font-size:13px;color:var(--label)">
-              Editor: <strong>${edName}</strong> &nbsp;·&nbsp; ${task.date}
+              Editor: <strong>${edName}</strong> &nbsp;·&nbsp; <span id="tdate-${tid}">${task.date}</span>
             </div>
           </div>
           <div style="text-align:right;flex-shrink:0;margin-left:12px">
-            <div style="font-size:19px;font-weight:700;color:var(--green)">${fmt(task.amount)}</div>
+            <div style="font-size:19px;font-weight:800;color:var(--green)" id="tamt-${tid}">${fmt(task.amount)}</div>
             <button class="btn btn-danger btn-sm" style="margin-top:6px" onclick="removeExtra('${tid}')">Remove</button>
           </div>
         </div>
       </div>`;
   });
 
-  // Summary by editor
-  const editors = Object.entries(state.editors);
-  if (editors.length && tasks.length) {
+  // Summary
+  if (editors.length && Object.keys(state.extras).length) {
     html += `<div class="card" style="margin-top:6px"><div class="card-title">Summary by Editor</div>`;
     editors.forEach(([eid, editor]) => {
-      const edTasks = tasks.filter(([,t]) => t.editorId === eid);
+      const edTasks = Object.entries(state.extras).filter(([,t]) => t.editorId === eid);
       if (!edTasks.length) return;
       const total = edTasks.reduce((s,[,t]) => s + Number(t.amount), 0);
       html += `
@@ -902,6 +1015,19 @@ function renderExtras() {
   }
 
   document.getElementById("content").innerHTML = html;
+
+  // Inline edits for tasks
+  tasks.forEach(([tid, task]) => {
+    const descEl = document.getElementById("tdesc-" + tid);
+    const amtEl  = document.getElementById("tamt-"  + tid);
+    const dateEl = document.getElementById("tdate-" + tid);
+    if (descEl) makeEditable(descEl, val => set(`/extras/${tid}/description`, val).then(() => toast("Task updated")));
+    if (amtEl)  makeEditable(amtEl,  val => {
+      const n = parseFloat(val.replace(/[^0-9.]/g,""));
+      if (!isNaN(n)) set(`/extras/${tid}/amount`, n).then(() => toast("Amount updated"));
+    });
+    if (dateEl) makeEditable(dateEl, val => set(`/extras/${tid}/date`, val).then(() => toast("Date updated")));
+  });
 }
 
 function addExtraModal() {
@@ -927,7 +1053,7 @@ function addExtraModal() {
       <span style="color:var(--red)">🔴 Mark as Urgent</span>
     </label>
     <div class="row" style="justify-content:flex-end;gap:8px">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" id="modal-submit">Add Task</button>
     </div>`,
     () => {
@@ -937,8 +1063,7 @@ function addExtraModal() {
       const date        = document.getElementById("m-tdate").value;
       const urgent      = document.getElementById("m-turgent").checked;
       if (!editorId || !description || isNaN(amount)) return;
-      const id = uid();
-      set(`/extras/${id}`, { editorId, description, amount, date, urgent })
+      set(`/extras/${uid()}`, { editorId, description, amount, date, urgent })
         .then(() => { toast("Task added"); closeModal(); });
     }
   );
@@ -953,54 +1078,87 @@ function removeExtra(tid) {
 // INVOICES TAB
 // ══════════════════════════════════════════════════════════════════════════════
 function renderInvoices() {
-  const allEditors = Object.entries(state.editors);
+  const fEditor = filterState.editor || "all";
+  const searchQ = (filterState.search || "").toLowerCase();
 
-  // Week range, persisted locally (cosmetic only)
-  const weekData = JSON.parse(localStorage.getItem("eh_week") || "null") || {};
-  const weekNum   = weekData.weekNum   || 1;
-  const startDate = weekData.startDate || new Date().toISOString().split("T")[0];
-  const endDate   = weekData.endDate   || new Date().toISOString().split("T")[0];
+  const weekLabel = localStorage.getItem("eh_weeklabel") ||
+    "Week of " + new Date().toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" });
+  const weekRange = localStorage.getItem("eh_weekrange") || "";
 
-  // worked-days per editor, persisted locally
-  const workedDays = JSON.parse(localStorage.getItem("eh_workeddays") || "{}");
-
-  const search = filters.invoices.search.toLowerCase();
-  const clusters = Object.entries(state.clusters);
-
-  let editors = allEditors;
-  if (search) {
-    editors = editors.filter(([eid, e]) => {
-      if (e.name.toLowerCase().includes(search)) return true;
-      const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
-      return myAssignments.some(a => {
-        const ac = state.accounts[a.accountId];
-        return ac && creatorName(ac.creatorId).toLowerCase().includes(search);
-      });
-    });
-  }
-  if (filters.invoices.cluster !== "all") {
-    const cl = state.clusters[filters.invoices.cluster];
-    if (cl) {
-      editors = editors.filter(([eid]) => {
-        const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
-        return myAssignments.some(a => {
-          const ac = state.accounts[a.accountId];
-          return ac && ac.number >= cl.range[0] && ac.number <= cl.range[1];
-        });
-      });
-    }
-  }
+  let editors = Object.entries(state.editors);
+  if (fEditor !== "all") editors = editors.filter(([eid]) => eid === fEditor);
+  if (searchQ) editors = editors.filter(([,e]) => e.name.toLowerCase().includes(searchQ));
 
   let grandTotal = 0;
-  const invoiceBlocks = editors.map(([eid, editor]) => {
+  const allEditorsList = Object.entries(state.editors);
+
+  editors.forEach(([eid, editor]) => {
     const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
     const myAccounts = myAssignments.map(a => state.accounts[a.accountId]).filter(Boolean);
-    const acTotal = myAccounts.reduce((s, ac) => s + rateType(ac.type).rate, 0);
-
+    const acTotal = myAccounts.reduce((s,ac) => s + rateType(ac.type).rate, 0);
     const myExtras = Object.values(state.extras).filter(t => t.editorId === eid);
-    const exTotal  = myExtras.reduce((s, t) => s + Number(t.amount), 0);
+    const exTotal  = myExtras.reduce((s,t) => s + Number(t.amount), 0);
+    grandTotal += acTotal + exTotal;
+  });
+
+  let html = `
+    <div class="row-between" style="margin-bottom:16px">
+      <div>
+        <div style="font-size:18px;font-weight:700">Invoices</div>
+        <div style="font-size:13px;color:var(--label);margin-top:2px">Auto-calculated per editor</div>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <input type="text" placeholder="🔍  Search editors…" value="${filterState.search}"
+        oninput="filterState.search=this.value; renderInvoices()" />
+      <select class="filter-select" onchange="filterState.editor=this.value; renderInvoices()">
+        <option value="all" ${fEditor==='all'?'selected':''}>All Editors</option>
+        ${allEditorsList.map(([eid,e]) => `<option value="${eid}" ${fEditor===eid?'selected':''}>${e.name}</option>`).join('')}
+      </select>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-left:auto">
+        <input type="text" id="week-label-input" value="${weekLabel}" placeholder="Week label…"
+          style="width:200px;font-size:12px;padding:5px 10px"
+          onchange="localStorage.setItem('eh_weeklabel', this.value); renderInvoices();" />
+        <input type="text" id="week-range-input" value="${weekRange}" placeholder="Jun 1 – Jun 7, 2026"
+          style="width:200px;font-size:12px;padding:5px 10px"
+          onchange="localStorage.setItem('eh_weekrange', this.value); renderInvoices();" />
+      </div>
+    </div>`;
+
+  if (Object.keys(state.editors).length) {
+    html += `
+      <div class="summary-gradient" style="margin-bottom:20px">
+        <div style="font-size:12px;opacity:.8;margin-bottom:4px">${weekLabel} · Total Payroll</div>
+        <div style="font-size:38px;font-weight:800">${fmt(grandTotal)}</div>
+        <div style="font-size:13px;opacity:.8;margin-top:4px">
+          ${Object.keys(state.editors).length} editor${Object.keys(state.editors).length!==1?"s":""} ·
+          ${Object.keys(state.accounts).length} account${Object.keys(state.accounts).length!==1?"s":""}
+        </div>
+      </div>`;
+  }
+
+  if (!editors.length) {
+    html += `<div class="card empty"><div class="empty-icon">🧾</div>Add editors and assign accounts to generate invoices.</div>`;
+  }
+
+  editors.forEach(([eid, editor]) => {
+    const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
+    const myAccounts = myAssignments.map(a => state.accounts[a.accountId]).filter(Boolean);
+    const acTotal = myAccounts.reduce((s,ac) => s + rateType(ac.type).rate, 0);
+    const myExtras = Object.values(state.extras).filter(t => t.editorId === eid);
+    const exTotal  = myExtras.reduce((s,t) => s + Number(t.amount), 0);
     const total    = acTotal + exTotal;
-    grandTotal    += total;
+
+    // Group accounts by type for text invoice
+    const typeGroups = {};
+    myAccounts.forEach(ac => {
+      const rt = rateType(ac.type);
+      if (!typeGroups[rt.id]) typeGroups[rt.id] = { label: rt.label, rate: rt.rate, count: 0 };
+      typeGroups[rt.id].count++;
+    });
+
+    // Unique projects (creators)
+    const projectNames = [...new Set(myAccounts.map(ac => creatorName(ac.creatorId)))];
 
     let acLines = "";
     myAccounts.forEach(ac => {
@@ -1012,11 +1170,11 @@ function renderInvoices() {
           <div class="row">
             <span class="tag" style="${tagStyle(col)}">#${ac.number}</span>
             <div>
-              <div style="font-weight:500;font-size:14px">${creatorName(ac.creatorId)}</div>
-              <div style="font-size:12px;color:var(--label)">${rt.label} · !${rt.reels} reels</div>
+              <div style="font-weight:500;font-size:14px" id="inv-creator-${ac.number}-${eid}">${creatorName(ac.creatorId)}</div>
+              <div style="font-size:12px;color:var(--label)">${rt.label} · ${rt.reels} reels</div>
             </div>
           </div>
-          <span style="font-weight:600;color:var(--green)">${fmt(rt.rate)}</span>
+          <span style="font-weight:700;color:var(--green)">${fmt(rt.rate)}</span>
         </div>`;
     });
 
@@ -1031,22 +1189,18 @@ function renderInvoices() {
             </div>
             <div style="font-size:12px;color:var(--label)">${task.date}</div>
           </div>
-          <span style="font-weight:600;color:var(--orange)">${fmt(task.amount)}</span>
+          <span style="font-weight:700;color:var(--orange)">${fmt(task.amount)}</span>
         </div>`;
     });
 
-    return `
-      <div class="card" style="margin-bottom:20px">
+    html += `
+      <div class="card" style="margin-bottom:20px" id="inv-card-${eid}">
         <div class="row-between" style="margin-bottom:14px">
           <div class="row">
             <div class="editor-avatar">${initials(editor.name)}</div>
             <div>
               <div style="font-size:17px;font-weight:700">${editor.name}</div>
-              <div style="font-size:13px;color:var(--label)">
-                Worked days:
-                <span class="editable" contenteditable="true" spellcheck="false" style="display:inline"
-                  onblur="commitWorkedDays(this,'${eid}')" onkeydown="editKeydown(event)">${workedDays[eid] ?? 5}</span>
-              </div>
+              <div style="font-size:13px;color:var(--label)">${weekLabel}</div>
             </div>
           </div>
           <div style="text-align:right">
@@ -1057,9 +1211,7 @@ function renderInvoices() {
         <div class="divider"></div>
 
         ${myAccounts.length ? `
-          <div style="font-size:11px;font-weight:600;color:var(--label);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">
-            Accounts (${myAccounts.length})
-          </div>
+          <div class="section-header">Accounts (${myAccounts.length})</div>
           ${acLines}
           <div style="display:flex;justify-content:flex-end;padding:6px 12px;font-size:14px;font-weight:600">
             Accounts subtotal: <span style="color:var(--green);margin-left:8px">${fmt(acTotal)}</span>
@@ -1067,209 +1219,119 @@ function renderInvoices() {
 
         ${myExtras.length ? `
           <div class="divider"></div>
-          <div style="font-size:11px;font-weight:600;color:var(--label);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">
-            Extra & Urgent Tasks (${myExtras.length})
-          </div>
+          <div class="section-header">Extra & Urgent Tasks (${myExtras.length})</div>
           ${exLines}
           <div style="display:flex;justify-content:flex-end;padding:6px 12px;font-size:14px;font-weight:600">
             Extras subtotal: <span style="color:var(--orange);margin-left:8px">${fmt(exTotal)}</span>
           </div>` : ""}
 
         ${!myAccounts.length && !myExtras.length ? `
-          <div style="text-align:center;padding:20px;color:var(--label);font-size:14px">
-            No accounts or tasks assigned yet.
-          </div>` : ""}
+          <div style="text-align:center;padding:20px;color:var(--label);font-size:14px">No accounts or tasks assigned yet.</div>` : ""}
 
         <div class="divider"></div>
         <div class="invoice-total">
           <span style="font-weight:700;font-size:15px">Total Due to ${editor.name}</span>
           <span style="font-weight:800;font-size:20px;color:var(--blue)">${fmt(total)}</span>
         </div>
-        <button class="btn btn-secondary" style="margin-top:12px;width:100%" onclick="generateInvoiceText('${eid}')">📋 Generate Text Invoice</button>
+
+        <!-- Text Invoice Generator -->
+        <div style="margin-top:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:12px;font-weight:700;color:var(--label);text-transform:uppercase;letter-spacing:.05em">📋 Text Invoice</div>
+            <div class="row" style="gap:6px">
+              <input type="number" id="worked-days-${eid}" value="${myAccounts.length ? 5 : 0}" min="0" max="7"
+                style="width:64px;padding:5px 8px;font-size:12px;border-radius:8px;border:1.5px solid #E5E5EA"
+                placeholder="Days" title="Worked days" />
+              <label style="font-size:11px;color:var(--label)">days worked</label>
+              <button class="btn btn-green btn-sm" onclick="generateInvoiceText('${eid}')">Generate</button>
+            </div>
+          </div>
+          <textarea class="invoice-text-area" id="inv-text-${eid}" placeholder="Click Generate → to produce the text invoice block…" spellcheck="false"></textarea>
+          <button class="btn btn-secondary btn-sm" style="margin-top:8px;float:right" onclick="copyInvoiceText('${eid}')">Copy Text</button>
+          <div style="clear:both"></div>
+        </div>
       </div>`;
   });
 
-  let html = `
-    <div class="row-between" style="margin-bottom:14px">
-      <div>
-        <div style="font-size:18px;font-weight:700">Invoices</div>
-        <div style="font-size:13px;color:var(--label);margin-top:3px">Auto-calculated per editor</div>
-      </div>
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="grid3">
-        <div class="field" style="margin-bottom:0">
-          <label>Week #</label>
-          <input type="number" id="week-num-input" value="${weekNum}" min="1"
-            onchange="saveWeek()" />
-        </div>
-        <div class="field" style="margin-bottom:0">
-          <label>Start Date</label>
-          <input type="date" id="week-start-input" value="${startDate}" onchange="saveWeek()" />
-        </div>
-        <div class="field" style="margin-bottom:0">
-          <label>End Date</label>
-          <input type="date" id="week-end-input" value="${endDate}" onchange="saveWeek()" />
-        </div>
-      </div>
-    </div>
-    <div class="filter-bar">
-      <input type="text" placeholder="🔍 Search editor or creator..." value="${filters.invoices.search}"
-        oninput="filters.invoices.search=this.value; renderInvoices();" />
-      <span class="filter-chip ${filters.invoices.cluster==='all'?'active':''}" onclick="filters.invoices.cluster='all'; renderInvoices();">All</span>`;
-  clusters.forEach(([cid, cl]) => {
-    const active = filters.invoices.cluster === cid;
-    html += `<span class="filter-chip ${active?'active':''}" style="${active?`background:${cl.color};color:#fff;`:`background:${cl.color}18;color:${cl.color};`}"
-      onclick="filters.invoices.cluster='${cid}'; renderInvoices();">${cl.name}</span>`;
-  });
-  html += `</div>`;
-
-  if (allEditors.length) {
-    html += `
-      <div class="card" style="background:linear-gradient(135deg,#007AFF,#5856D6);color:#fff;margin-bottom:24px">
-        <div style="font-size:13px;opacity:.8;margin-bottom:4px">Week ${weekNum} · Total Payroll${editors.length!==allEditors.length ? " (filtered)" : ""}</div>
-        <div style="font-size:38px;font-weight:800">${fmt(grandTotal)}</div>
-        <div style="font-size:13px;opacity:.8;margin-top:4px">
-          ${editors.length} editor${editors.length!==1?"s":""} · ${Object.keys(state.accounts).length} account${Object.keys(state.accounts).length!==1?"s":""}
-        </div>
-      </div>`;
-  }
-
-  if (!allEditors.length) {
-    html += `<div class="card empty"><div class="empty-icon">🧾</div>Add editors and assign accounts to generate invoices.</div>`;
-  } else if (!editors.length) {
-    html += `<div class="card empty"><div class="empty-icon">🔍</div>No editors match your filters.</div>`;
-  }
-
-  html += invoiceBlocks.join("");
   document.getElementById("content").innerHTML = html;
 }
 
-function saveWeek() {
-  const weekNum   = document.getElementById("week-num-input").value;
-  const startDate = document.getElementById("week-start-input").value;
-  const endDate   = document.getElementById("week-end-input").value;
-  localStorage.setItem("eh_week", JSON.stringify({ weekNum, startDate, endDate }));
-  toast("Saved");
-}
-
-function commitWorkedDays(el, eid) {
-  const val = el.textContent.trim();
-  const workedDays = JSON.parse(localStorage.getItem("eh_workeddays") || "{}");
-  workedDays[eid] = val;
-  localStorage.setItem("eh_workeddays", JSON.stringify(workedDays));
-  toast("Saved");
-}
-
-function formatDateRangeLabel() {
-  const weekData = JSON.parse(localStorage.getItem("eh_week") || "null") || {};
-  const weekNum = weekData.weekNum || 1;
-  const fmtDate = (d) => {
-    if (!d) return "";
-    const [y,m,day] = d.split("-").map(Number);
-    return new Date(y, m-1, day).toLocaleDateString("en-US", { month:"long", day:"numeric" });
-  };
-  const start = weekData.startDate ? fmtDate(weekData.startDate) : "";
-  let end = "";
-  if (weekData.endDate) {
-    const [y,m,day] = weekData.endDate.split("-").map(Number);
-    const endD = new Date(y, m-1, day);
-    end = endD.toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" });
-  }
-  if (start && end) return `WEEK ${weekNum}: ${start.toUpperCase()} - ${end.toUpperCase()}`;
-  return `WEEK ${weekNum}`;
-}
-
+// ── Invoice text generator ────────────────────────────────────────────────────
 function generateInvoiceText(eid) {
   const editor = state.editors[eid];
   if (!editor) return;
+  const editorName_  = editor.name.toUpperCase();
+  const workedDays   = parseInt(document.getElementById("worked-days-" + eid).value) || 5;
+  const weekRange    = localStorage.getItem("eh_weekrange") || "";
+  const weekLabelRaw = localStorage.getItem("eh_weeklabel") || "";
+
+  // Parse week number + dates from the range field or label
+  let weekHeader = weekLabelRaw;
+  if (weekRange) weekHeader = weekRange;
+
   const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
   const myAccounts = myAssignments.map(a => state.accounts[a.accountId]).filter(Boolean);
-  const myExtras = Object.values(state.extras).filter(t => t.editorId === eid);
-  const workedDays = JSON.parse(localStorage.getItem("eh_workeddays") || "{}")[eid] ?? 5;
+  const myExtras   = Object.values(state.extras).filter(t => t.editorId === eid);
 
-  const acTotal = myAccounts.reduce((s, ac) => s + rateType(ac.type).rate, 0);
-  const exTotal = myExtras.reduce((s, t) => s + Number(t.amount), 0);
-  const total = acTotal + exTotal;
+  // Unique projects
+  const projectNames = [...new Set(myAccounts.map(ac => creatorName(ac.creatorId)))];
 
-  // Unique creator/project names
-  const projects = [...new Set(myAccounts.map(ac => creatorName(ac.creatorId)))];
-
-  // Group accounts by rate type for "ACCOUNT LIST"
-  const byType = {};
+  // Group by type
+  const typeGroups = {};
   myAccounts.forEach(ac => {
     const rt = rateType(ac.type);
-    if (!byType[rt.id]) byType[rt.id] = { label: rt.label, count: 0, rate: rt.rate };
-    byType[rt.id].count++;
+    if (!typeGroups[rt.id]) typeGroups[rt.id] = { label: rt.label, rate: rt.rate, count: 0, total: 0 };
+    typeGroups[rt.id].count++;
+    typeGroups[rt.id].total += rt.rate;
   });
 
-  // "THIS WEEK: Accounts: X + Y" — main rate-type count + extras count, mirroring the example's "15 + 1"
-  const typeEntries = Object.values(byType);
-  const mainCount  = typeEntries.length ? typeEntries[0].count : 0;
-  const otherCount = typeEntries.slice(1).reduce((s, t) => s + t.count, 0);
-  const accountsLine = typeEntries.length > 1
-    ? `${mainCount} + ${otherCount}`
-    : `${mainCount}`;
+  const acTotal  = myAccounts.reduce((s,ac) => s + rateType(ac.type).rate, 0);
+  const exTotal  = myExtras.reduce((s,t) => s + Number(t.amount), 0);
+  const total    = acTotal + exTotal;
 
-  let accountListLines = "";
-  typeEntries.forEach(t => {
-    accountListLines += `* ${t.label} (${t.count}): ${fmt(t.rate * t.count)}\n`;
-  });
-  myExtras.forEach(task => {
-    accountListLines += `* ${task.description} (1): ${fmt(task.amount)}\n`;
-  });
-
-  const lines = [];
-  lines.push(`INVOICE (${formatDateRangeLabel()})`);
+  // Build text
+  let lines = [];
+  lines.push(`INVOICE (${weekHeader.toUpperCase()})`);
   lines.push(`Worked days: ${workedDays}`);
-  lines.push(`Projects: ${projects.map(p => `• ${p}`).join(" ")}`);
+  if (projectNames.length) lines.push(`Projects: ${projectNames.map(p => `• ${p}`).join("  ")}`);
   lines.push("");
-  lines.push(editor.name.toUpperCase());
+  lines.push(`${editorName_} THIS WEEK:`);
+  lines.push(`Accounts: ${myAccounts.length}${myExtras.length ? " + " + myExtras.length + " EXTRA" : ""}`);
   lines.push("");
-  lines.push(`THIS WEEK: Accounts: ${accountsLine}`);
-  lines.push(`ACCOUNT LIST:`);
+  lines.push("ACCOUNT LIST:");
+  Object.values(typeGroups).forEach(g => {
+    lines.push(`   * ${g.label} (${g.count}): ${fmt(g.total)}`);
+  });
+  if (myExtras.length) {
+    lines.push("");
+    lines.push("EXTRAS:");
+    myExtras.forEach(t => {
+      lines.push(`   * ${t.description}: ${fmt(t.amount)}`);
+    });
+  }
   lines.push("");
-  lines.push(accountListLines.trimEnd());
   lines.push(`TOTAL BASE PAY: ${fmt(acTotal)}`);
-  lines.push(`EXPENSE: ${myExtras.length ? myExtras.map(t=>t.description).join(", ") : "None"}`);
-  lines.push("");
+  lines.push(`EXPENSE: ${exTotal > 0 ? fmt(exTotal) : "None"}`);
   lines.push(`Total ${fmt(total)}`);
 
-  const text = lines.join("\n");
-
-  openModal(`
-    <div class="modal-header">
-      <span class="modal-title">Text Invoice — ${editor.name}</span>
-      <button class="modal-close" onclick="closeModal()">✕</button>
-    </div>
-    <textarea class="invoice-text-box" id="invoice-text-area">${text}</textarea>
-    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:14px">
-      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
-      <button class="btn btn-primary" id="modal-submit" onclick="copyInvoiceText()">Copy to Clipboard</button>
-    </div>`
-  );
+  document.getElementById("inv-text-" + eid).value = lines.join("\n");
 }
 
-function copyInvoiceText() {
-  const ta = document.getElementById("invoice-text-area");
-  ta.select();
-  navigator.clipboard?.writeText(ta.value).then(() => toast("Copied!")).catch(() => {
-    document.execCommand("copy"); toast("Copied!");
+function copyInvoiceText(eid) {
+  const ta = document.getElementById("inv-text-" + eid);
+  if (!ta || !ta.value) { toast("Generate the invoice first"); return; }
+  navigator.clipboard.writeText(ta.value).then(() => toast("Copied to clipboard!")).catch(() => {
+    ta.select(); document.execCommand("copy"); toast("Copied!");
   });
 }
 
-// ── Bootstrap ────────────────────────────────────────────────────────────────
-loadRateTypes();
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
 document.getElementById("header-date").textContent =
   new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
 
 const savedCfg = localStorage.getItem("eh_firebase_cfg");
 if (savedCfg) {
-  try {
-    initFirebase(JSON.parse(savedCfg));
-  } catch(e) {
-    console.error("Saved config failed", e);
-  }
+  try { initFirebase(JSON.parse(savedCfg)); } catch(e) { console.error("Saved config failed", e); }
 }
 </script>
 </body>

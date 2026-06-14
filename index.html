@@ -321,6 +321,29 @@
   #content::-webkit-scrollbar-track { background: transparent; }
   #content::-webkit-scrollbar-thumb { background: rgba(199,199,204,0.7); border-radius: 3px; }
 
+  /* ── Global page animations ── */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes modal-in {
+    from { opacity: 0; transform: scale(0.94) translateY(16px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes overlay-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .anim-page { animation: fade-up .28s cubic-bezier(.22,1,.36,1) both; }
+  .anim-card { opacity: 0; animation: fade-up .32s cubic-bezier(.22,1,.36,1) forwards; }
+  .anim-row  { opacity: 0; animation: fade-up .26s cubic-bezier(.22,1,.36,1) forwards; }
+  .modal     { animation: modal-in .22s cubic-bezier(.34,1.2,.64,1) both; }
+  .modal-overlay { animation: overlay-in .18s ease both; }
+
   /* ── Quick-fill animations ── */
   @keyframes qf-slide-in {
     from { opacity: 0; transform: translateY(12px) scale(0.97); }
@@ -542,7 +565,7 @@ function dbUpdate(p,v) { setSyncing(true); return DB.ref(p).update(v); }
 const TAB_LABELS = { editors:"👤 Editors", accounts:"📁 Accounts", extras:"⚡ Extra Tasks", invoices:"🧾 Invoices" };
 function switchTab(tab) {
   currentTab = tab;
-  filterState = { search: "", cluster: "all", editor: "all" };
+  filterState = { search: "", cluster: "all", editor: "all", type: "all" };
   document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
   document.getElementById("nav-" + tab).classList.add("active");
   document.getElementById("header-title").textContent = TAB_LABELS[tab];
@@ -572,8 +595,14 @@ function updateUrgentBadge() {
 function rateType(id)   { return RATE_TYPES.find(t => t.id === id) || RATE_TYPES[0]; }
 function editorName(id) { return (state.editors[id]  || {}).name || "Unknown"; }
 function creatorName(id){ return (state.creators[id] || {}).name || "Unknown"; }
-function clusterFor(num) {
+function clusterFor(num, ac) {
+  // Prefer clusterId stored on account (set by quick-fill) for exact match
+  if (ac && ac.clusterId && state.clusters[ac.clusterId]) return state.clusters[ac.clusterId];
   return Object.values(state.clusters).find(c => num >= c.range[0] && num <= c.range[1]) || null;
+}
+function clusterIdFor(num, ac) {
+  if (ac && ac.clusterId && state.clusters[ac.clusterId]) return ac.clusterId;
+  return Object.entries(state.clusters).find(([,c]) => num >= c.range[0] && num <= c.range[1])?.[0] || null;
 }
 function tagStyle(color) { return `background:${color}22;color:${color};border:1px solid ${color}44;`; }
 function initials(name)  { return name ? name[0].toUpperCase() : "?"; }
@@ -654,7 +683,7 @@ function renderEditors() {
     html += `<div class="card empty"><div class="empty-icon">👤</div>No editors yet.<p>Add your first editor to get started.</p></div>`;
   }
 
-  editors.forEach(([eid, editor]) => {
+  editors.forEach(([eid, editor], idx) => {
     const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
     const myAccounts = myAssignments.map(a => state.accounts[a.accountId]).filter(Boolean);
     const weeklyTotal = myAccounts.reduce((s, ac) => s + rateType(ac.type).rate, 0);
@@ -662,7 +691,7 @@ function renderEditors() {
 
     let tagsHtml = "";
     myAccounts.slice(0, 5).forEach(ac => {
-      const cl = clusterFor(ac.number);
+      const cl = clusterFor(ac.number, ac);
       const rt = rateType(ac.type);
       const col = cl ? cl.color : "#8E8E93";
       tagsHtml += `<span class="tag" style="${tagStyle(col)}">#${ac.number} ${rt.label}</span>`;
@@ -670,7 +699,7 @@ function renderEditors() {
     if (myAccounts.length > 5) tagsHtml += `<span class="tag" style="background:var(--bg);color:var(--label)">+${myAccounts.length-5} more</span>`;
 
     html += `
-      <div class="card">
+      <div class="card anim-card" style="animation-delay:${idx*0.07}s">
         <div class="row-between">
           <div class="row">
             <div class="editor-avatar">${initials(editor.name)}</div>
@@ -738,12 +767,13 @@ function renderAccounts() {
   const searchQ = (filterState.search || "").toLowerCase();
   const fCluster = filterState.cluster || "all";
   const fEditor  = filterState.editor  || "all";
+  const fType    = filterState.type    || "all";
   const clusters = Object.entries(state.clusters);
   const editors  = Object.entries(state.editors);
 
   let filterHtml = `
     <div class="filter-bar">
-      <input type="text" placeholder="🔍  Search accounts or creators…" value="${filterState.search}"
+      <input type="text" placeholder="🔍  Search accounts, creators, type…" value="${filterState.search}"
         oninput="filterState.search=this.value; renderAccounts()" />
       <select class="filter-select" onchange="filterState.cluster=this.value; renderAccounts()">
         <option value="all" ${fCluster==='all'?'selected':''}>All Clusters</option>
@@ -753,6 +783,10 @@ function renderAccounts() {
         <option value="all" ${fEditor==='all'?'selected':''}>All Editors</option>
         <option value="unassigned" ${fEditor==='unassigned'?'selected':''}>Unassigned</option>
         ${editors.map(([eid,e]) => `<option value="${eid}" ${fEditor===eid?'selected':''}>${e.name}</option>`).join('')}
+      </select>
+      <select class="filter-select" onchange="filterState.type=this.value; renderAccounts()">
+        <option value="all" ${fType==='all'?'selected':''}>All Types</option>
+        ${RATE_TYPES.map(t => `<option value="${t.id}" ${fType===t.id?'selected':''}>${t.label}</option>`).join('')}
       </select>
     </div>`;
 
@@ -764,14 +798,21 @@ function renderAccounts() {
     <div class="row" style="margin-bottom:22px;gap:10px;flex-wrap:wrap">`;
 
   if (!clusters.length) html += `<span style="color:var(--label);font-size:14px">No clusters yet.</span>`;
-  clusters.forEach(([cid, cl]) => {
-    const count = Object.values(state.accounts).filter(a => a.number >= cl.range[0] && a.number <= cl.range[1]).length;
+  clusters.forEach(([cid, cl], ci) => {
+    // Count accounts that belong to this cluster specifically
+    const count = Object.values(state.accounts).filter(ac => {
+      if (ac.clusterId) return ac.clusterId === cid;
+      return ac.number >= cl.range[0] && ac.number <= cl.range[1];
+    }).length;
     html += `
-      <div class="cluster-chip" style="border-left:4px solid ${cl.color};min-width:155px">
+      <div class="cluster-chip anim-card" style="border-left:4px solid ${cl.color};min-width:155px;animation-delay:${ci*0.05}s">
         <div style="font-weight:700;color:${cl.color};font-size:15px" id="cname-${cid}">${cl.name}</div>
         <div style="font-size:12px;color:var(--label);margin-top:2px">Accounts #${cl.range[0]}–#${cl.range[1]}</div>
         <div style="font-size:13px;margin-top:2px;font-weight:600">${count} account${count !== 1 ? "s" : ""}</div>
-        <button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="removeCluster('${cid}')">Remove</button>
+        <div class="row" style="gap:6px;margin-top:8px">
+          <button class="btn btn-secondary btn-sm" onclick="editClusterModal('${cid}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="removeCluster('${cid}')">Remove</button>
+        </div>
       </div>`;
   });
 
@@ -791,11 +832,18 @@ function renderAccounts() {
   accounts = accounts.filter(([acid, ac]) => {
     if (searchQ) {
       const cname = creatorName(ac.creatorId).toLowerCase();
-      if (!cname.includes(searchQ) && !String(ac.number).includes(searchQ)) return false;
+      const rt    = rateType(ac.type).label.toLowerCase();
+      if (!cname.includes(searchQ) && !String(ac.number).includes(searchQ) && !rt.includes(searchQ)) return false;
     }
     if (fCluster !== "all") {
-      const cl = Object.entries(state.clusters).find(([cid]) => cid === fCluster)?.[1];
-      if (!cl || ac.number < cl.range[0] || ac.number > cl.range[1]) return false;
+      const cl = state.clusters[fCluster];
+      if (!cl) return false;
+      // Prefer stored clusterId, fallback to range
+      const belongs = ac.clusterId ? ac.clusterId === fCluster : (ac.number >= cl.range[0] && ac.number <= cl.range[1]);
+      if (!belongs) return false;
+    }
+    if (fType !== "all") {
+      if (ac.type !== fType) return false;
     }
     if (fEditor !== "all") {
       const assignment = Object.values(state.assignments).find(a => a.accountId === acid);
@@ -809,15 +857,15 @@ function renderAccounts() {
     html += `<div class="card empty"><div class="empty-icon">📁</div>No accounts match your filters.</div>`;
   }
 
-  accounts.forEach(([acid, ac]) => {
-    const cl  = clusterFor(ac.number);
+  accounts.forEach(([acid, ac], idx) => {
+    const cl  = clusterFor(ac.number, ac);
     const rt  = rateType(ac.type);
     const col = cl ? cl.color : "#8E8E93";
     const assignment = Object.values(state.assignments).find(a => a.accountId === acid);
     const assignedEditor = assignment ? state.editors[assignment.editorId] : null;
 
     html += `
-      <div class="account-row">
+      <div class="account-row anim-row" style="animation-delay:${idx*0.03}s">
         <div class="account-num" style="background:${col}22;color:${col}">#${ac.number}</div>
         <div class="account-info">
           <div class="name">
@@ -922,6 +970,39 @@ function addClusterModal() {
 function removeCluster(cid) {
   if (!confirm("Remove this cluster?")) return;
   remove(`/clusters/${cid}`).then(() => toast("Cluster removed"));
+}
+
+function editClusterModal(cid) {
+  const cl = state.clusters[cid];
+  if (!cl) return;
+  openModal(`
+    <div class="modal-header">
+      <span class="modal-title">Edit Cluster</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="field"><label>Cluster Name</label><input type="text" id="m-cname" value="${cl.name}" /></div>
+    <div class="grid2">
+      <div class="field"><label>From Account #</label><input type="number" id="m-cstart" value="${cl.range[0]}" /></div>
+      <div class="field"><label>To Account #</label><input type="number" id="m-cend" value="${cl.range[1]}" /></div>
+    </div>
+    <div class="field"><label>Colour</label>
+      <div class="row"><input type="color" id="m-ccolor" value="${cl.color}" style="width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px" />
+        <span style="font-size:13px;color:var(--label)">Pick a colour for this cluster</span></div>
+    </div>
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-submit">Save Changes</button>
+    </div>`,
+    () => {
+      const name  = document.getElementById("m-cname").value.trim();
+      const start = parseInt(document.getElementById("m-cstart").value);
+      const end   = parseInt(document.getElementById("m-cend").value);
+      const color = document.getElementById("m-ccolor").value;
+      if (!name || isNaN(start) || isNaN(end)) return;
+      DB.ref(`/clusters/${cid}`).update({ name, range: [start, end], color })
+        .then(() => { toast("Cluster updated"); closeModal(); });
+    }
+  );
 }
 
 function addAccountModal() {
@@ -1113,12 +1194,12 @@ async function qfSubmit() {
     await DB.ref(`/clusters/${clusterId}`).set({ name: clusterName, range: [start, end], color });
   }
 
-  // Batch write all accounts + assignments
+  // Batch write all accounts + assignments (store clusterId so count is exact)
   const batch = {};
   for (let i = 0; i < count; i++) {
     const num = start + i;
     const aid = uid();
-    batch[`/accounts/${aid}`] = { number: num, creatorId, type: typeId };
+    batch[`/accounts/${aid}`] = { number: num, creatorId, type: typeId, clusterId };
     if (edId) batch[`/assignments/${uid()}`] = { editorId: edId, accountId: aid };
   }
 
@@ -1186,11 +1267,11 @@ function renderExtras() {
     html += `<div class="card empty"><div class="empty-icon">⚡</div>No extra tasks match your filters.</div>`;
   }
 
-  tasks.forEach(([tid, task]) => {
+  tasks.forEach(([tid, task], idx) => {
     const edName = editorName(task.editorId);
     const rowClass = task.urgent ? "urgent-row" : "extra-row";
     html += `
-      <div class="card ${rowClass}" style="padding:14px 18px">
+      <div class="card ${rowClass} anim-card" style="padding:14px 18px;animation-delay:${idx*0.05}s">
         <div class="row-between">
           <div style="flex:1;min-width:0">
             <div class="row" style="margin-bottom:4px">
@@ -1296,9 +1377,27 @@ function renderInvoices() {
   const fEditor = filterState.editor || "all";
   const searchQ = (filterState.search || "").toLowerCase();
 
-  const weekLabel = localStorage.getItem("eh_weeklabel") ||
-    "Week of " + new Date().toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" });
-  const weekRange = localStorage.getItem("eh_weekrange") || "";
+  // Auto-compute current week Mon–Sun if nothing saved yet
+  function currentWeekLabel() {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun
+    const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    const opts = { month:"short", day:"numeric" };
+    const y = sun.getFullYear();
+    return `${mon.toLocaleDateString("en-US", opts)} – ${sun.toLocaleDateString("en-US", opts)}, ${y}`;
+  }
+  function currentWeekNum() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    return Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7);
+  }
+
+  const autoRange = currentWeekLabel();
+  const autoLabel = `Week ${currentWeekNum()}`;
+
+  const weekLabel = localStorage.getItem("eh_weeklabel") || autoLabel;
+  const weekRange = localStorage.getItem("eh_weekrange") || autoRange;
 
   let editors = Object.entries(state.editors);
   if (fEditor !== "all") editors = editors.filter(([eid]) => eid === fEditor);
@@ -1377,7 +1476,7 @@ function renderInvoices() {
 
     let acLines = "";
     myAccounts.forEach(ac => {
-      const cl  = clusterFor(ac.number);
+      const cl  = clusterFor(ac.number, ac);
       const rt  = rateType(ac.type);
       const col = cl ? cl.color : "#8E8E93";
       acLines += `
@@ -1409,7 +1508,7 @@ function renderInvoices() {
     });
 
     html += `
-      <div class="card" style="margin-bottom:20px" id="inv-card-${eid}">
+      <div class="card anim-card" style="margin-bottom:20px;animation-delay:${Object.keys(state.editors).indexOf(eid)*0.08}s" id="inv-card-${eid}">
         <div class="row-between" style="margin-bottom:14px">
           <div class="row">
             <div class="editor-avatar">${initials(editor.name)}</div>
@@ -1477,12 +1576,20 @@ function generateInvoiceText(eid) {
   if (!editor) return;
   const editorName_  = editor.name.toUpperCase();
   const workedDays   = parseInt(document.getElementById("worked-days-" + eid).value) || 5;
-  const weekRange    = localStorage.getItem("eh_weekrange") || "";
-  const weekLabelRaw = localStorage.getItem("eh_weeklabel") || "";
 
-  // Parse week number + dates from the range field or label
-  let weekHeader = weekLabelRaw;
-  if (weekRange) weekHeader = weekRange;
+  const weekRange    = localStorage.getItem("eh_weekrange") || (() => {
+    const now = new Date(), day = now.getDay();
+    const mon = new Date(now); mon.setDate(now.getDate() - (day===0?6:day-1));
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    const o = {month:"short",day:"numeric"};
+    return `${mon.toLocaleDateString("en-US",o)} – ${sun.toLocaleDateString("en-US",o)}, ${sun.getFullYear()}`;
+  })();
+  const weekLabelRaw = localStorage.getItem("eh_weeklabel") || (() => {
+    const now=new Date(), start=new Date(now.getFullYear(),0,1);
+    return `Week ${Math.ceil(((now-start)/86400000+start.getDay()+1)/7)}`;
+  })();
+
+  let weekHeader = weekRange || weekLabelRaw;
 
   const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
   const myAccounts = myAssignments.map(a => state.accounts[a.accountId]).filter(Boolean);

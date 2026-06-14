@@ -13,17 +13,17 @@
   /* ── Reset & Base ── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --blue:    #800020;
-    --green:   #A0002A;
+    --blue:    #007AFF;
+    --green:   #34C759;
     --red:     #FF3B30;
-    --orange:  #C0002A;
-    --purple:  #600018;
-    --bg:      #111111;
-    --card:    #1C1C1C;
-    --border:  rgba(255,255,255,0.08);
-    --label:   #999999;
-    --text:    #FFFFFF;
-    --sidebar: rgba(20,20,20,0.95);
+    --orange:  #FF9500;
+    --purple:  #5856D6;
+    --bg:      #F2F2F7;
+    --card:    #FFFFFF;
+    --border:  rgba(0,0,0,0.07);
+    --label:   #8E8E93;
+    --text:    #1C1C1E;
+    --sidebar: rgba(255,255,255,0.88);
     --r:       14px;
     --font:    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
   }
@@ -63,7 +63,7 @@
   #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   #header {
     padding: 18px 28px 14px; border-bottom: 1px solid var(--border);
-    background: rgba(20,20,20,0.95); backdrop-filter: blur(16px);
+    background: rgba(255,255,255,.75); backdrop-filter: blur(16px);
     display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
   }
   #header .title { font-size: 21px; font-weight: 700; }
@@ -85,8 +85,8 @@
 
   /* ── Inputs ── */
   input[type=text], input[type=number], input[type=date], select, textarea {
-    width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #333333;
-    font-size: 14px; font-family: var(--font); outline: none; background: #1C1C1C; color: var(--text);
+    width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #E5E5EA;
+    font-size: 14px; font-family: var(--font); outline: none; background: #fff; color: var(--text);
     transition: border-color .15s;
   }
   input:focus, select:focus, textarea:focus { border-color: var(--blue); }
@@ -110,12 +110,12 @@
     z-index: 1000; backdrop-filter: blur(4px);
   }
   .modal {
-    background: #1C1C1C; border-radius: 20px; padding: 26px; width: 430px; max-width: 92vw;
+    background: #fff; border-radius: 20px; padding: 26px; width: 430px; max-width: 92vw;
     box-shadow: 0 20px 60px rgba(0,0,0,.18); max-height: 90vh; overflow-y: auto;
   }
   .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
   .modal-header .modal-title { font-size: 17px; font-weight: 700; }
-  .modal-close { background: var(--bg); border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: #ffffff; }
+  .modal-close { background: var(--bg); border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
 
   /* ── Account row ── */
   .account-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--bg); border-radius: 10px; margin-bottom: 8px; }
@@ -143,6 +143,33 @@
   /* ── Empty state ── */
   .empty { text-align: center; padding: 48px 20px; color: var(--label); font-size: 14px; }
   .empty .empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+  /* ── Inline editable ── */
+  .editable {
+    border: 1px dashed transparent; border-radius: 6px; padding: 1px 4px; margin: -1px -4px;
+    cursor: text; transition: border-color .12s, background .12s;
+  }
+  .editable:hover { border-color: var(--blue); background: #007AFF0C; }
+  .editable:focus { outline: none; border-color: var(--blue); background: #007AFF12; }
+  .editable-amount { color: var(--green); font-weight: 700; }
+
+  /* ── Filter bar ── */
+  .filter-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-bar input[type=text] { width: 220px; }
+  .filter-chip {
+    padding: 6px 13px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    background: var(--bg); color: var(--label); cursor: pointer; border: 1.5px solid transparent;
+    transition: all .12s; user-select: none; white-space: nowrap;
+  }
+  .filter-chip:hover { background: #007AFF14; }
+  .filter-chip.active { background: var(--blue); color: #fff; }
+
+  /* ── Invoice text box ── */
+  .invoice-text-box {
+    width: 100%; min-height: 220px; font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px; line-height: 1.6; padding: 14px; border-radius: 10px;
+    border: 1.5px solid #E5E5EA; background: #FAFAFB; white-space: pre; resize: vertical;
+  }
 
   /* ── Setup screen ── */
   #setup-screen {
@@ -280,6 +307,11 @@ const RATE_TYPES = [
 let DB = null;
 let state = { editors:{}, creators:{}, accounts:{}, clusters:{}, assignments:{}, extras:{} };
 let currentTab = "editors";
+let filters = {
+  editors:  { search: "" },
+  accounts: { search: "", cluster: "all" },
+  invoices: { search: "", cluster: "all" }
+};
 
 // ── Firebase config storage ─────────────────────────────────────────────────
 function saveConfig() {
@@ -387,6 +419,27 @@ function toast(msg, dur=2800) {
   setTimeout(() => el.classList.remove("show"), dur);
 }
 
+// ── Inline-edit helpers ─────────────────────────────────────────────────────
+// Attach to a contenteditable span/div: onblur="commitEdit(this,'/path','field','number'|'text')"
+function commitEdit(el, path, field, kind) {
+  let val = el.textContent.trim();
+  if (kind === "number") {
+    val = parseFloat(val);
+    if (isNaN(val)) { toast("Enter a valid number"); render(); return; }
+  }
+  if (kind === "int") {
+    val = parseInt(val);
+    if (isNaN(val)) { toast("Enter a valid number"); render(); return; }
+  }
+  if (val === "" ) { toast("Value can't be empty"); render(); return; }
+  update(path, { [field]: val }).then(() => toast("Saved"));
+}
+function editKeydown(e) {
+  if (e.key === "Enter") { e.preventDefault(); e.target.blur(); }
+  if (e.key === "Escape") { e.preventDefault(); render(); }
+}
+
+
 // ── Modal ───────────────────────────────────────────────────────────────────
 function openModal(html, onSubmit) {
   const root = document.getElementById("modal-root");
@@ -407,18 +460,28 @@ function closeModal() { document.getElementById("modal-root").innerHTML = ""; }
 // EDITORS TAB
 // ══════════════════════════════════════════════════════════════════════════════
 function renderEditors() {
-  const editors = Object.entries(state.editors);
+  const allEditors = Object.entries(state.editors);
+  const search = filters.editors.search.toLowerCase();
+  const editors = allEditors.filter(([,e]) => !search || e.name.toLowerCase().includes(search));
+
   let html = `
-    <div class="row-between" style="margin-bottom:20px">
+    <div class="row-between" style="margin-bottom:14px">
       <div>
         <div style="font-size:18px;font-weight:700">Editors</div>
         <div style="font-size:13px;color:var(--label);margin-top:3px">Your content editing team</div>
       </div>
       <button class="btn btn-primary" onclick="addEditorModal()">+ Add Editor</button>
+    </div>
+    <div class="filter-bar">
+      <input type="text" placeholder="🔍 Search editors..." value="${filters.editors.search}"
+        oninput="filters.editors.search=this.value; renderEditors();" />
+      <span style="font-size:12px;color:var(--label)">${editors.length} of ${allEditors.length}</span>
     </div>`;
 
-  if (!editors.length) {
+  if (!allEditors.length) {
     html += `<div class="card empty"><div class="empty-icon">👤</div>No editors yet — add your first one.</div>`;
+  } else if (!editors.length) {
+    html += `<div class="card empty"><div class="empty-icon">🔍</div>No editors match "${filters.editors.search}".</div>`;
   }
 
   editors.forEach(([eid, editor]) => {
@@ -442,7 +505,9 @@ function renderEditors() {
           <div class="row">
             <div class="editor-avatar">${initials(editor.name)}</div>
             <div>
-              <div style="font-weight:600;font-size:15px">${editor.name}
+              <div style="font-weight:600;font-size:15px">
+                <span class="editable" contenteditable="true" spellcheck="false"
+                  onblur="commitEdit(this,'/editors/${eid}','name','text')" onkeydown="editKeydown(event)">${editor.name}</span>
                 ${urgentCount ? `<span class="badge" style="background:#FF3B3018;color:var(--red);margin-left:6px">🔴 ${urgentCount} urgent</span>` : ""}
               </div>
               <div style="font-size:13px;color:var(--label);margin-top:2px">
@@ -509,8 +574,15 @@ function renderAccounts() {
     const count = Object.values(state.accounts).filter(a => a.number >= cl.range[0] && a.number <= cl.range[1]).length;
     html += `
       <div class="cluster-chip" style="border-left:4px solid ${cl.color};min-width:150px">
-        <div style="font-weight:700;color:${cl.color};font-size:15px">${cl.name}</div>
-        <div style="font-size:12px;color:var(--label);margin-top:2px">Accounts #${cl.range[0]}–#${cl.range[1]}</div>
+        <div style="font-weight:700;color:${cl.color};font-size:15px">
+          <span class="editable" contenteditable="true" spellcheck="false"
+            onblur="commitEdit(this,'/clusters/${cid}','name','text')" onkeydown="editKeydown(event)">${cl.name}</span>
+        </div>
+        <div style="font-size:12px;color:var(--label);margin-top:2px">
+          Accounts #<span class="editable" contenteditable="true" spellcheck="false" style="display:inline"
+            onblur="commitClusterRange(this,'${cid}',0)" onkeydown="editKeydown(event)">${cl.range[0]}</span>–#<span class="editable" contenteditable="true" spellcheck="false" style="display:inline"
+            onblur="commitClusterRange(this,'${cid}',1)" onkeydown="editKeydown(event)">${cl.range[1]}</span>
+        </div>
         <div style="font-size:13px;margin-top:2px">${count} account${count !== 1 ? "s" : ""}</div>
         <button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="removeCluster('${cid}')">Remove</button>
       </div>`;
@@ -521,11 +593,37 @@ function renderAccounts() {
     <div class="row-between" style="margin-bottom:12px">
       <div style="font-size:18px;font-weight:700">Accounts</div>
       <button class="btn btn-primary" onclick="addAccountModal()">+ Add Account</button>
-    </div>`;
+    </div>
+    <div class="filter-bar">
+      <input type="text" placeholder="🔍 Search accounts or editors..." value="${filters.accounts.search}"
+        oninput="filters.accounts.search=this.value; renderAccounts();" />
+      <span class="filter-chip ${filters.accounts.cluster==='all'?'active':''}" onclick="filters.accounts.cluster='all'; renderAccounts();">All</span>`;
+  clusters.forEach(([cid, cl]) => {
+    const active = filters.accounts.cluster === cid;
+    html += `<span class="filter-chip ${active?'active':''}" style="${active?`background:${cl.color};color:#fff;`:`background:${cl.color}18;color:${cl.color};`}"
+      onclick="filters.accounts.cluster='${cid}'; renderAccounts();">${cl.name}</span>`;
+  });
+  html += `</div>`;
 
-  const accounts = Object.entries(state.accounts).sort((a,b) => a[1].number - b[1].number);
-  if (!accounts.length) {
+  const search = filters.accounts.search.toLowerCase();
+  let accounts = Object.entries(state.accounts).sort((a,b) => a[1].number - b[1].number);
+  if (filters.accounts.cluster !== "all") {
+    const cl = state.clusters[filters.accounts.cluster];
+    if (cl) accounts = accounts.filter(([,ac]) => ac.number >= cl.range[0] && ac.number <= cl.range[1]);
+  }
+  if (search) {
+    accounts = accounts.filter(([,ac]) => {
+      const assignment = Object.values(state.assignments).find(a => a.accountId === Object.keys(state.accounts).find(k=>state.accounts[k]===ac));
+      const edName = assignment ? editorName(assignment.editorId).toLowerCase() : "";
+      return creatorName(ac.creatorId).toLowerCase().includes(search) ||
+             String(ac.number).includes(search) || edName.includes(search);
+    });
+  }
+
+  if (!Object.keys(state.accounts).length) {
     html += `<div class="card empty"><div class="empty-icon">📁</div>No accounts yet.</div>`;
+  } else if (!accounts.length) {
+    html += `<div class="card empty"><div class="empty-icon">🔍</div>No accounts match your filters.</div>`;
   }
 
   accounts.forEach(([acid, ac]) => {
@@ -534,17 +632,23 @@ function renderAccounts() {
     const col = cl ? cl.color : "#8E8E93";
     const assignment = Object.values(state.assignments).find(a => a.accountId === acid);
     const assignedEditor = assignment ? state.editors[assignment.editorId] : null;
+    const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}" ${t.id===ac.type?"selected":""}>${t.label}</option>`).join("");
 
     html += `
       <div class="account-row">
-        <div class="account-num" style="background:${col}20;color:${col}">#${ac.number}</div>
+        <div class="account-num" style="background:${col}20;color:${col}">#<span class="editable" contenteditable="true" spellcheck="false" style="display:inline"
+          onblur="commitEdit(this,'/accounts/${acid}','number','int')" onkeydown="editKeydown(event)">${ac.number}</span></div>
         <div class="account-info">
-          <div class="name">${creatorName(ac.creatorId)}
+          <div class="name">
+            <span class="editable" contenteditable="true" spellcheck="false"
+              onblur="commitEdit(this,'/creators/${ac.creatorId}','name','text')" onkeydown="editKeydown(event)">${creatorName(ac.creatorId)}</span>
             ${cl ? `<span class="tag" style="${tagStyle(col)};margin-left:6px">${cl.name}</span>` : ""}
           </div>
           <div class="meta">
-            ${rt.label} · !${rt.reels} reels ·
-            <span style="color:var(--green);font-weight:600">${fmt(rt.rate)}/wk</span>
+            <select onchange="update('/accounts/${acid}',{type:this.value}).then(()=>{toast('Saved');render()})" style="display:inline-block;width:auto;padding:2px 6px;font-size:12px;border-radius:6px;border:1px solid #E5E5EA">${typeOpts}</select>
+            · !${rt.reels} reels ·
+            <span class="editable editable-amount" contenteditable="true" spellcheck="false"
+              onblur="commitRate('${ac.type}','rate',this,'number')" onkeydown="editKeydown(event)">${rt.rate.toFixed(2)}</span>/wk
             ${assignedEditor ? `· <strong>${assignedEditor.name}</strong>` : `· <span style="color:var(--orange)">Unassigned</span>`}
           </div>
         </div>
@@ -560,19 +664,63 @@ function renderAccounts() {
   // Rate reference
   html += `
     <div class="card" style="margin-top:20px">
-      <div class="card-title">Rate Reference</div>
+      <div class="card-title">Rate Reference <span style="font-weight:400;color:var(--label);font-size:12px">(click to edit)</span></div>
       <div class="grid2">`;
   RATE_TYPES.forEach(t => {
     html += `
       <div class="rate-pill">
-        <div class="rate-label">${t.label}</div>
-        <div class="rate-reels">!${t.reels} reels</div>
-        <div class="rate-amount">${fmt(t.rate)}/wk</div>
+        <div class="rate-label">
+          <span class="editable" contenteditable="true" spellcheck="false"
+            onblur="commitRate('${t.id}','label',this,'text')" onkeydown="editKeydown(event)">${t.label}</span>
+        </div>
+        <div class="rate-reels">!<span class="editable" contenteditable="true" spellcheck="false" style="display:inline"
+            onblur="commitRate('${t.id}','reels',this,'int')" onkeydown="editKeydown(event)">${t.reels}</span> reels</div>
+        <div class="rate-amount">$<span class="editable editable-amount" contenteditable="true" spellcheck="false" style="display:inline"
+            onblur="commitRate('${t.id}','rate',this,'number')" onkeydown="editKeydown(event)">${t.rate.toFixed(2)}</span>/wk</div>
       </div>`;
   });
   html += `</div></div>`;
 
   document.getElementById("content").innerHTML = html;
+}
+
+// Rate types are app-level constants (not in Firebase) — edits persist to localStorage.
+function commitRate(typeId, field, el, kind) {
+  const rt = RATE_TYPES.find(t => t.id === typeId);
+  if (!rt) return;
+  let val = el.textContent.trim();
+  if (kind === "number" || kind === "int") {
+    val = kind === "int" ? parseInt(val) : parseFloat(val);
+    if (isNaN(val)) { toast("Enter a valid number"); render(); return; }
+  }
+  if (val === "") { toast("Value can't be empty"); render(); return; }
+  rt[field] = val;
+  saveRateTypes();
+  toast("Saved");
+  render();
+}
+function commitClusterRange(el, cid, idx) {
+  const val = parseInt(el.textContent.trim());
+  if (isNaN(val)) { toast("Enter a valid number"); render(); return; }
+  const cl = state.clusters[cid];
+  if (!cl) return;
+  const range = [...cl.range];
+  range[idx] = val;
+  update(`/clusters/${cid}`, { range }).then(() => toast("Saved"));
+}
+function saveRateTypes() {
+  localStorage.setItem("eh_ratetypes", JSON.stringify(RATE_TYPES));
+}
+function loadRateTypes() {
+  const saved = localStorage.getItem("eh_ratetypes");
+  if (!saved) return;
+  try {
+    const parsed = JSON.parse(saved);
+    parsed.forEach(p => {
+      const rt = RATE_TYPES.find(t => t.id === p.id);
+      if (rt) Object.assign(rt, p);
+    });
+  } catch(e) {}
 }
 
 function addClusterModal() {
@@ -805,11 +953,43 @@ function removeExtra(tid) {
 // INVOICES TAB
 // ══════════════════════════════════════════════════════════════════════════════
 function renderInvoices() {
-  const editors = Object.entries(state.editors);
+  const allEditors = Object.entries(state.editors);
 
-  // week label persisted in localStorage per-device (cosmetic only)
-  const weekLabel = localStorage.getItem("eh_weeklabel") ||
-    "Week of " + new Date().toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" });
+  // Week range, persisted locally (cosmetic only)
+  const weekData = JSON.parse(localStorage.getItem("eh_week") || "null") || {};
+  const weekNum   = weekData.weekNum   || 1;
+  const startDate = weekData.startDate || new Date().toISOString().split("T")[0];
+  const endDate   = weekData.endDate   || new Date().toISOString().split("T")[0];
+
+  // worked-days per editor, persisted locally
+  const workedDays = JSON.parse(localStorage.getItem("eh_workeddays") || "{}");
+
+  const search = filters.invoices.search.toLowerCase();
+  const clusters = Object.entries(state.clusters);
+
+  let editors = allEditors;
+  if (search) {
+    editors = editors.filter(([eid, e]) => {
+      if (e.name.toLowerCase().includes(search)) return true;
+      const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
+      return myAssignments.some(a => {
+        const ac = state.accounts[a.accountId];
+        return ac && creatorName(ac.creatorId).toLowerCase().includes(search);
+      });
+    });
+  }
+  if (filters.invoices.cluster !== "all") {
+    const cl = state.clusters[filters.invoices.cluster];
+    if (cl) {
+      editors = editors.filter(([eid]) => {
+        const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
+        return myAssignments.some(a => {
+          const ac = state.accounts[a.accountId];
+          return ac && ac.number >= cl.range[0] && ac.number <= cl.range[1];
+        });
+      });
+    }
+  }
 
   let grandTotal = 0;
   const invoiceBlocks = editors.map(([eid, editor]) => {
@@ -862,7 +1042,11 @@ function renderInvoices() {
             <div class="editor-avatar">${initials(editor.name)}</div>
             <div>
               <div style="font-size:17px;font-weight:700">${editor.name}</div>
-              <div style="font-size:13px;color:var(--label)">${weekLabel}</div>
+              <div style="font-size:13px;color:var(--label)">
+                Worked days:
+                <span class="editable" contenteditable="true" spellcheck="false" style="display:inline"
+                  onblur="commitWorkedDays(this,'${eid}')" onkeydown="editKeydown(event)">${workedDays[eid] ?? 5}</span>
+              </div>
             </div>
           </div>
           <div style="text-align:right">
@@ -901,25 +1085,49 @@ function renderInvoices() {
           <span style="font-weight:700;font-size:15px">Total Due to ${editor.name}</span>
           <span style="font-weight:800;font-size:20px;color:var(--blue)">${fmt(total)}</span>
         </div>
+        <button class="btn btn-secondary" style="margin-top:12px;width:100%" onclick="generateInvoiceText('${eid}')">📋 Generate Text Invoice</button>
       </div>`;
   });
 
   let html = `
-    <div class="row-between" style="margin-bottom:20px">
+    <div class="row-between" style="margin-bottom:14px">
       <div>
         <div style="font-size:18px;font-weight:700">Invoices</div>
         <div style="font-size:13px;color:var(--label);margin-top:3px">Auto-calculated per editor</div>
       </div>
-      <div class="row">
-        <input type="text" id="week-label-input" value="${weekLabel}" style="width:220px"
-          onchange="localStorage.setItem('eh_weeklabel', this.value); renderInvoices();" />
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="grid3">
+        <div class="field" style="margin-bottom:0">
+          <label>Week #</label>
+          <input type="number" id="week-num-input" value="${weekNum}" min="1"
+            onchange="saveWeek()" />
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Start Date</label>
+          <input type="date" id="week-start-input" value="${startDate}" onchange="saveWeek()" />
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>End Date</label>
+          <input type="date" id="week-end-input" value="${endDate}" onchange="saveWeek()" />
+        </div>
       </div>
-    </div>`;
+    </div>
+    <div class="filter-bar">
+      <input type="text" placeholder="🔍 Search editor or creator..." value="${filters.invoices.search}"
+        oninput="filters.invoices.search=this.value; renderInvoices();" />
+      <span class="filter-chip ${filters.invoices.cluster==='all'?'active':''}" onclick="filters.invoices.cluster='all'; renderInvoices();">All</span>`;
+  clusters.forEach(([cid, cl]) => {
+    const active = filters.invoices.cluster === cid;
+    html += `<span class="filter-chip ${active?'active':''}" style="${active?`background:${cl.color};color:#fff;`:`background:${cl.color}18;color:${cl.color};`}"
+      onclick="filters.invoices.cluster='${cid}'; renderInvoices();">${cl.name}</span>`;
+  });
+  html += `</div>`;
 
-  if (editors.length) {
+  if (allEditors.length) {
     html += `
       <div class="card" style="background:linear-gradient(135deg,#007AFF,#5856D6);color:#fff;margin-bottom:24px">
-        <div style="font-size:13px;opacity:.8;margin-bottom:4px">${weekLabel} · Total Payroll</div>
+        <div style="font-size:13px;opacity:.8;margin-bottom:4px">Week ${weekNum} · Total Payroll${editors.length!==allEditors.length ? " (filtered)" : ""}</div>
         <div style="font-size:38px;font-weight:800">${fmt(grandTotal)}</div>
         <div style="font-size:13px;opacity:.8;margin-top:4px">
           ${editors.length} editor${editors.length!==1?"s":""} · ${Object.keys(state.accounts).length} account${Object.keys(state.accounts).length!==1?"s":""}
@@ -927,15 +1135,131 @@ function renderInvoices() {
       </div>`;
   }
 
-  if (!editors.length) {
+  if (!allEditors.length) {
     html += `<div class="card empty"><div class="empty-icon">🧾</div>Add editors and assign accounts to generate invoices.</div>`;
+  } else if (!editors.length) {
+    html += `<div class="card empty"><div class="empty-icon">🔍</div>No editors match your filters.</div>`;
   }
 
   html += invoiceBlocks.join("");
   document.getElementById("content").innerHTML = html;
 }
 
+function saveWeek() {
+  const weekNum   = document.getElementById("week-num-input").value;
+  const startDate = document.getElementById("week-start-input").value;
+  const endDate   = document.getElementById("week-end-input").value;
+  localStorage.setItem("eh_week", JSON.stringify({ weekNum, startDate, endDate }));
+  toast("Saved");
+}
+
+function commitWorkedDays(el, eid) {
+  const val = el.textContent.trim();
+  const workedDays = JSON.parse(localStorage.getItem("eh_workeddays") || "{}");
+  workedDays[eid] = val;
+  localStorage.setItem("eh_workeddays", JSON.stringify(workedDays));
+  toast("Saved");
+}
+
+function formatDateRangeLabel() {
+  const weekData = JSON.parse(localStorage.getItem("eh_week") || "null") || {};
+  const weekNum = weekData.weekNum || 1;
+  const fmtDate = (d) => {
+    if (!d) return "";
+    const [y,m,day] = d.split("-").map(Number);
+    return new Date(y, m-1, day).toLocaleDateString("en-US", { month:"long", day:"numeric" });
+  };
+  const start = weekData.startDate ? fmtDate(weekData.startDate) : "";
+  let end = "";
+  if (weekData.endDate) {
+    const [y,m,day] = weekData.endDate.split("-").map(Number);
+    const endD = new Date(y, m-1, day);
+    end = endD.toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" });
+  }
+  if (start && end) return `WEEK ${weekNum}: ${start.toUpperCase()} - ${end.toUpperCase()}`;
+  return `WEEK ${weekNum}`;
+}
+
+function generateInvoiceText(eid) {
+  const editor = state.editors[eid];
+  if (!editor) return;
+  const myAssignments = Object.values(state.assignments).filter(a => a.editorId === eid);
+  const myAccounts = myAssignments.map(a => state.accounts[a.accountId]).filter(Boolean);
+  const myExtras = Object.values(state.extras).filter(t => t.editorId === eid);
+  const workedDays = JSON.parse(localStorage.getItem("eh_workeddays") || "{}")[eid] ?? 5;
+
+  const acTotal = myAccounts.reduce((s, ac) => s + rateType(ac.type).rate, 0);
+  const exTotal = myExtras.reduce((s, t) => s + Number(t.amount), 0);
+  const total = acTotal + exTotal;
+
+  // Unique creator/project names
+  const projects = [...new Set(myAccounts.map(ac => creatorName(ac.creatorId)))];
+
+  // Group accounts by rate type for "ACCOUNT LIST"
+  const byType = {};
+  myAccounts.forEach(ac => {
+    const rt = rateType(ac.type);
+    if (!byType[rt.id]) byType[rt.id] = { label: rt.label, count: 0, rate: rt.rate };
+    byType[rt.id].count++;
+  });
+
+  // "THIS WEEK: Accounts: X + Y" — main rate-type count + extras count, mirroring the example's "15 + 1"
+  const typeEntries = Object.values(byType);
+  const mainCount  = typeEntries.length ? typeEntries[0].count : 0;
+  const otherCount = typeEntries.slice(1).reduce((s, t) => s + t.count, 0);
+  const accountsLine = typeEntries.length > 1
+    ? `${mainCount} + ${otherCount}`
+    : `${mainCount}`;
+
+  let accountListLines = "";
+  typeEntries.forEach(t => {
+    accountListLines += `* ${t.label} (${t.count}): ${fmt(t.rate * t.count)}\n`;
+  });
+  myExtras.forEach(task => {
+    accountListLines += `* ${task.description} (1): ${fmt(task.amount)}\n`;
+  });
+
+  const lines = [];
+  lines.push(`INVOICE (${formatDateRangeLabel()})`);
+  lines.push(`Worked days: ${workedDays}`);
+  lines.push(`Projects: ${projects.map(p => `• ${p}`).join(" ")}`);
+  lines.push("");
+  lines.push(editor.name.toUpperCase());
+  lines.push("");
+  lines.push(`THIS WEEK: Accounts: ${accountsLine}`);
+  lines.push(`ACCOUNT LIST:`);
+  lines.push("");
+  lines.push(accountListLines.trimEnd());
+  lines.push(`TOTAL BASE PAY: ${fmt(acTotal)}`);
+  lines.push(`EXPENSE: ${myExtras.length ? myExtras.map(t=>t.description).join(", ") : "None"}`);
+  lines.push("");
+  lines.push(`Total ${fmt(total)}`);
+
+  const text = lines.join("\n");
+
+  openModal(`
+    <div class="modal-header">
+      <span class="modal-title">Text Invoice — ${editor.name}</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <textarea class="invoice-text-box" id="invoice-text-area">${text}</textarea>
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:14px">
+      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+      <button class="btn btn-primary" id="modal-submit" onclick="copyInvoiceText()">Copy to Clipboard</button>
+    </div>`
+  );
+}
+
+function copyInvoiceText() {
+  const ta = document.getElementById("invoice-text-area");
+  ta.select();
+  navigator.clipboard?.writeText(ta.value).then(() => toast("Copied!")).catch(() => {
+    document.execCommand("copy"); toast("Copied!");
+  });
+}
+
 // ── Bootstrap ────────────────────────────────────────────────────────────────
+loadRateTypes();
 document.getElementById("header-date").textContent =
   new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
 

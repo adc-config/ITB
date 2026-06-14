@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Invoice</title>
+<title>Editorial Hub</title>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -321,6 +321,66 @@
   #content::-webkit-scrollbar-track { background: transparent; }
   #content::-webkit-scrollbar-thumb { background: rgba(199,199,204,0.7); border-radius: 3px; }
 
+  /* ── Quick-fill animations ── */
+  @keyframes qf-slide-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes qf-pop {
+    0%   { opacity: 0; transform: scale(0.85) translateY(6px); }
+    60%  { transform: scale(1.04) translateY(-2px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes qf-success-ring {
+    0%   { box-shadow: 0 0 0 0 rgba(52,199,89,0.5); }
+    70%  { box-shadow: 0 0 0 10px rgba(52,199,89,0); }
+    100% { box-shadow: 0 0 0 0 rgba(52,199,89,0); }
+  }
+  .qf-preview-card {
+    animation: qf-pop .32s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .qf-modal-enter {
+    animation: qf-slide-in .22s ease both;
+  }
+  .qf-summary-box {
+    background: linear-gradient(135deg, rgba(52,199,89,0.1), rgba(48,209,88,0.06));
+    border: 1.5px solid rgba(52,199,89,0.3);
+    border-radius: 14px; padding: 14px 18px; margin-top: 14px;
+    animation: qf-slide-in .25s ease both;
+  }
+  .qf-account-preview {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; background: rgba(255,255,255,0.8);
+    border-radius: 10px; margin-bottom: 7px;
+    border: 1px solid rgba(255,255,255,0.9);
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  }
+  .qf-num-badge {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; flex-shrink: 0;
+  }
+  .btn-quickfill {
+    background: linear-gradient(135deg, #34C759, #30D158);
+    color: #fff; box-shadow: 0 4px 14px rgba(52,199,89,0.35);
+    border: none;
+  }
+  .btn-quickfill:hover { opacity: .9; }
+  .qf-creating-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-radius: 10px;
+    background: rgba(52,199,89,0.07);
+    border: 1px dashed rgba(52,199,89,0.3);
+    margin-bottom: 6px; font-size: 13px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .qf-spinner {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(52,199,89,0.2);
+    border-top-color: var(--green);
+    animation: spin .7s linear infinite; flex-shrink: 0;
+  }
+
   @media (max-width: 640px) {
     #sidebar { display: none; }
     #content { padding: 14px; }
@@ -332,7 +392,7 @@
 <!-- Setup screen -->
 <div id="setup-screen">
   <div class="setup-card">
-    <div class="setup-logo">Editor's Department</div>
+    <div class="setup-logo">Editorial Hub</div>
     <div class="setup-sub">One-time setup — takes about 3 minutes</div>
     <div class="setup-step">
       <div class="setup-num">1</div>
@@ -363,7 +423,7 @@
 <!-- Sidebar -->
 <div id="sidebar">
   <div class="sidebar-brand">
-    <div class="logo">Invoice</div>
+    <div class="logo">Editorial Hub</div>
     <div class="sub">Transparency Board</div>
   </div>
   <div class="nav-section-label">Management</div>
@@ -718,7 +778,10 @@ function renderAccounts() {
   html += `</div>
     <div class="row-between" style="margin-bottom:12px">
       <div style="font-size:18px;font-weight:700">Accounts</div>
-      <button class="btn btn-primary" onclick="addAccountModal()">+ Add Account</button>
+      <div class="row" style="gap:8px">
+        <button class="btn btn-quickfill" onclick="clusterQuickFillModal()" title="Create multiple accounts at once">⚡ Quick-Fill Cluster</button>
+        <button class="btn btn-primary" onclick="addAccountModal()">+ Add Account</button>
+      </div>
     </div>
     ${filterHtml}`;
 
@@ -909,6 +972,158 @@ function removeAccount(acid) {
   const batch = { [`/accounts/${acid}`]: null };
   Object.entries(state.assignments).forEach(([k,a]) => { if (a.accountId === acid) batch[`/assignments/${k}`] = null; });
   DB.ref().update(batch).then(() => toast("Account removed"));
+}
+
+// ── Cluster Quick-Fill ────────────────────────────────────────────────────────
+function clusterQuickFillModal() {
+  const editorsOpts = Object.entries(state.editors).map(([id,e]) => `<option value="${id}">${e.name}</option>`).join("");
+  const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}">${t.label} — ${t.reels} reels · ${fmt(t.rate)}/wk</option>`).join("");
+
+  openModal(`
+    <div class="modal-header qf-modal-enter">
+      <span class="modal-title">⚡ Cluster Quick-Fill</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="font-size:13px;color:var(--label);margin-bottom:18px;line-height:1.6">
+      Fill in the cluster details and all accounts will be created at once — no more adding one by one!
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Cluster Name</label>
+        <input type="text" id="qf-cluster" placeholder="e.g. Cluster A Part 1" oninput="qfUpdatePreview()" />
+      </div>
+      <div class="field">
+        <label>Creator Name</label>
+        <input type="text" id="qf-creator" placeholder="@brandname" oninput="qfUpdatePreview()" />
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Starting Account #</label>
+        <input type="number" id="qf-start" placeholder="1" min="1" oninput="qfUpdatePreview()" />
+      </div>
+      <div class="field">
+        <label>Number of Accounts</label>
+        <input type="number" id="qf-count" placeholder="5" min="1" max="50" value="5" oninput="qfUpdatePreview()" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Account Type (applies to all)</label>
+      <select id="qf-type" onchange="qfUpdatePreview()">${typeOpts}</select>
+    </div>
+    <div class="field">
+      <label>Assign Editor (optional, applies to all)</label>
+      <select id="qf-editor"><option value="">— Assign later —</option>${editorsOpts}</select>
+    </div>
+    <div id="qf-preview"></div>
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:16px">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-quickfill" id="modal-submit">⚡ Create All Accounts</button>
+    </div>`,
+    () => qfSubmit()
+  );
+
+  // Trigger initial preview after modal opens
+  setTimeout(qfUpdatePreview, 60);
+}
+
+function qfUpdatePreview() {
+  const clusterName = (document.getElementById("qf-cluster")?.value || "").trim();
+  const creator     = (document.getElementById("qf-creator")?.value || "").trim();
+  const start       = parseInt(document.getElementById("qf-start")?.value) || 0;
+  const count       = Math.min(parseInt(document.getElementById("qf-count")?.value) || 0, 50);
+  const typeId      = document.getElementById("qf-type")?.value;
+  const rt          = rateType(typeId);
+  const preview     = document.getElementById("qf-preview");
+  if (!preview) return;
+
+  if (!start || !count || !creator || !clusterName) {
+    preview.innerHTML = `<div style="font-size:13px;color:var(--label);text-align:center;padding:16px 0;">Fill in all fields to see a live preview ↑</div>`;
+    return;
+  }
+
+  const perAccount = rt.rate;
+  const total      = perAccount * count;
+
+  let cardsHtml = "";
+  for (let i = 0; i < count; i++) {
+    const num = start + i;
+    cardsHtml += `
+      <div class="qf-account-preview qf-preview-card" style="animation-delay:${i * 0.04}s">
+        <div class="qf-num-badge" style="background:rgba(52,199,89,0.12);color:var(--green)">#${num}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">${creator}</div>
+          <div style="font-size:12px;color:var(--label)">${rt.label} · ${rt.reels} reels · <span style="color:var(--green);font-weight:700">${fmt(rt.rate)}/wk</span></div>
+        </div>
+        <span style="font-size:11px;font-weight:700;color:var(--label);background:rgba(52,199,89,0.1);padding:2px 8px;border-radius:20px">${clusterName}</span>
+      </div>`;
+  }
+
+  preview.innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:var(--label);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">
+      Preview — ${count} account${count !== 1 ? "s" : ""} to create
+    </div>
+    <div style="max-height:220px;overflow-y:auto;padding-right:2px">
+      ${cardsHtml}
+    </div>
+    <div class="qf-summary-box">
+      <div class="row-between">
+        <div>
+          <div style="font-size:13px;font-weight:700">💰 Invoice Total for this Cluster</div>
+          <div style="font-size:12px;color:var(--label);margin-top:3px">${count} account${count !== 1 ? "s" : ""} × ${fmt(perAccount)} (${rt.label}) each</div>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:var(--green)">${fmt(total)}</div>
+      </div>
+    </div>`;
+}
+
+async function qfSubmit() {
+  const clusterName = (document.getElementById("qf-cluster")?.value || "").trim();
+  const creator     = (document.getElementById("qf-creator")?.value || "").trim();
+  const start       = parseInt(document.getElementById("qf-start")?.value);
+  const count       = Math.min(parseInt(document.getElementById("qf-count")?.value) || 0, 50);
+  const typeId      = document.getElementById("qf-type")?.value;
+  const edId        = document.getElementById("qf-editor")?.value || "";
+
+  if (!clusterName || !creator || isNaN(start) || count < 1) {
+    toast("Please fill in all required fields");
+    return;
+  }
+
+  closeModal();
+
+  // Show creating progress toast
+  toast(`Creating ${count} accounts…`, 6000);
+
+  // Find or create creator
+  let creatorId = Object.entries(state.creators).find(([,c]) => c.name.toLowerCase() === creator.toLowerCase())?.[0];
+  if (!creatorId) {
+    creatorId = uid();
+    await DB.ref(`/creators/${creatorId}`).set({ name: creator });
+  }
+
+  // Find or create cluster: use range start → start+count-1
+  const end = start + count - 1;
+  let clusterId = Object.entries(state.clusters).find(([,cl]) => cl.name.toLowerCase() === clusterName.toLowerCase())?.[0];
+  if (!clusterId) {
+    clusterId = uid();
+    const colors = ["#007AFF","#34C759","#FF9500","#AF52DE","#FF3B30","#32ADE6","#5856D6","#FF6B35"];
+    const usedColors = Object.values(state.clusters).map(c => c.color);
+    const color = colors.find(c => !usedColors.includes(c)) || colors[Math.floor(Math.random() * colors.length)];
+    await DB.ref(`/clusters/${clusterId}`).set({ name: clusterName, range: [start, end], color });
+  }
+
+  // Batch write all accounts + assignments
+  const batch = {};
+  for (let i = 0; i < count; i++) {
+    const num = start + i;
+    const aid = uid();
+    batch[`/accounts/${aid}`] = { number: num, creatorId, type: typeId };
+    if (edId) batch[`/assignments/${uid()}`] = { editorId: edId, accountId: aid };
+  }
+
+  await DB.ref().update(batch);
+  toast(`✅ ${count} accounts created for ${clusterName}!`, 3500);
 }
 
 function assignModal(acid, currentEditorId) {

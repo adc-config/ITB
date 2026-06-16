@@ -678,9 +678,11 @@ function weekHeaderText(w) {
 }
 
 // ── Rate types (editable) ────────────────────────────────────────────────────
+// Matches the Rates sheet: New / Week 1-2 / Week 3 / Post Schedule / Full Operations
 let RATE_TYPES = [
-  { id: "week1_2",       label: "Week 1–2",        reels: 7,  rate: 2.50 },
-  { id: "week3",         label: "Week 3",           reels: 14, rate: 4.00 },
+  { id: "new",           label: "New",              reels: 0,  rate: 0.00 },
+  { id: "week1_2",       label: "Week 1–2",         reels: 7,  rate: 2.50 },
+  { id: "week3",         label: "Week 3",           reels: 7,  rate: 4.00 },
   { id: "post_schedule", label: "Post Schedule",    reels: 21, rate: 6.00 },
   { id: "full_ops",      label: "Full Operations",  reels: 56, rate: 12.00 },
 ];
@@ -845,17 +847,20 @@ function updateUrgentBadge() {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-function rateType(id)   { return RATE_TYPES.find(t => t.id === id) || RATE_TYPES[0]; }
+function rateType(id)   { return RATE_TYPES.find(t => t.id === id) || RATE_TYPES.find(t => t.id === "new") || RATE_TYPES[0]; }
 function editorName(id) { return (state.editors[id]  || {}).name || "Unknown"; }
 function creatorName(id){ return (state.creators[id] || {}).name || "Unknown"; }
 function clusterFor(num, ac) {
-  // Prefer clusterId stored on account (set by quick-fill) for exact match
+  // Prefer clusterId stored on account (set by quick-fill or manual add)
   if (ac && ac.clusterId && state.clusters[ac.clusterId]) return state.clusters[ac.clusterId];
-  return Object.values(state.clusters).find(c => num >= c.range[0] && num <= c.range[1]) || null;
+  // Legacy fallback: range-based lookup (for old number-based data)
+  if (num != null) return Object.values(state.clusters).find(c => c.range && num >= c.range[0] && num <= c.range[1]) || null;
+  return null;
 }
 function clusterIdFor(num, ac) {
   if (ac && ac.clusterId && state.clusters[ac.clusterId]) return ac.clusterId;
-  return Object.entries(state.clusters).find(([,c]) => num >= c.range[0] && num <= c.range[1])?.[0] || null;
+  if (num != null) return Object.entries(state.clusters).find(([,c]) => c.range && num >= c.range[0] && num <= c.range[1])?.[0] || null;
+  return null;
 }
 function tagStyle(color) { return `background:${color}22;color:${color};border:1px solid ${color}44;`; }
 function initials(name)  { return name ? name[0].toUpperCase() : "?"; }
@@ -949,7 +954,8 @@ function renderEditors() {
       const cl = clusterFor(ac.number, ac);
       const rt = rateType(ac.type);
       const col = cl ? cl.color : "#8E8E93";
-      tagsHtml += `<span class="tag" style="${tagStyle(col)}">#${ac.number} ${rt.label}</span>`;
+      const label = ac.username || (ac.number ? `#${ac.number}` : "—");
+      tagsHtml += `<span class="tag" style="${tagStyle(col)}">${label} <span style="opacity:.7">${rt.label}</span></span>`;
     });
     if (myAccounts.length > 5) tagsHtml += `<span class="tag" style="background:var(--bg);color:var(--label)">+${myAccounts.length-5} more</span>`;
 
@@ -1066,10 +1072,10 @@ function renderAccounts() {
   if (!clusters.length) html += `<span style="color:var(--label);font-size:14px">No clusters yet.</span>`;
   const creatorSwatches = ["#007AFF","#34C759","#FF9500","#AF52DE","#FF3B30","#32ADE6","#5856D6","#FF6B35","#8E8E93","#30D158"];
   clusters.forEach(([cid, cl], ci) => {
-    // Accounts that belong to this cluster specifically
     const clusterAccounts = Object.values(state.accounts).filter(ac => {
       if (ac.clusterId) return ac.clusterId === cid;
-      return ac.number >= cl.range[0] && ac.number <= cl.range[1];
+      // legacy fallback
+      return cl.range && ac.number >= cl.range[0] && ac.number <= cl.range[1];
     });
     const count = clusterAccounts.length;
 
@@ -1100,7 +1106,6 @@ function renderAccounts() {
     html += `
       <div class="cluster-chip anim-card" style="border-left:4px solid ${cl.color};min-width:175px;animation-delay:${ci*0.05}s">
         <div style="font-weight:700;color:${cl.color};font-size:15px" id="cname-${cid}">${cl.name}</div>
-        <div style="font-size:12px;color:var(--label);margin-top:2px">Accounts #${cl.range[0]}–#${cl.range[1]}</div>
         <div style="font-size:13px;margin-top:2px;font-weight:600">${count} account${count !== 1 ? "s" : ""}${creatorEntries.length > 1 ? ` · ${creatorEntries.length} creators` : ""}</div>
         ${creatorRowsHtml}
         <div class="row" style="gap:6px;margin-top:8px">
@@ -1120,21 +1125,27 @@ function renderAccounts() {
     </div>
     ${filterHtml}`;
 
-  let accounts = Object.entries(state.accounts).sort((a,b) => a[1].number - b[1].number);
+  let accounts = Object.entries(state.accounts).sort((a,b) => {
+    const ua = a[1].username || (a[1].number ? `Account ${a[1].number}` : "");
+    const ub = b[1].username || (b[1].number ? `Account ${b[1].number}` : "");
+    return ua.localeCompare(ub, undefined, { numeric: true, sensitivity: "base" });
+  });
 
   // apply filters
   accounts = accounts.filter(([acid, ac]) => {
     if (searchQ) {
-      const cname = creatorName(ac.creatorId).toLowerCase();
-      const rt    = rateType(ac.type).label.toLowerCase();
-      if (!cname.includes(searchQ) && !String(ac.number).includes(searchQ) && !rt.includes(searchQ)) return false;
+      const cname    = creatorName(ac.creatorId).toLowerCase();
+      const uname    = (ac.username || "").toLowerCase();
+      const rt       = rateType(ac.type).label.toLowerCase();
+      const acType   = (ac.accountType === "main" ? "main" : "back-up");
+      if (!cname.includes(searchQ) && !uname.includes(searchQ) && !rt.includes(searchQ) && !acType.includes(searchQ)) return false;
     }
     if (fCluster !== "all") {
-      const cl = state.clusters[fCluster];
-      if (!cl) return false;
-      // Prefer stored clusterId, fallback to range
-      const belongs = ac.clusterId ? ac.clusterId === fCluster : (ac.number >= cl.range[0] && ac.number <= cl.range[1]);
-      if (!belongs) return false;
+      if (!ac.clusterId || ac.clusterId !== fCluster) {
+        // legacy range fallback
+        const cl = state.clusters[fCluster];
+        if (!cl || !cl.range || !ac.number || ac.number < cl.range[0] || ac.number > cl.range[1]) return false;
+      }
     }
     if (fType !== "all") {
       if (ac.type !== fType) return false;
@@ -1159,24 +1170,28 @@ function renderAccounts() {
     const col = cl ? cl.color : "#8E8E93";
     const assignment = Object.values(state.assignments).find(a => a.accountId === acid);
     const assignedEditor = assignment ? state.editors[assignment.editorId] : null;
+    const acTypeLabel = ac.accountType === "main" ? "Main" : "Back-up";
+    const displayName = ac.username || (ac.number ? `Account ${ac.number}` : "—");
 
     html += `
       <div class="account-row anim-row" style="animation-delay:${idx*0.03}s">
         <input type="checkbox" class="select-check" ${selection.accounts.has(acid) ? "checked" : ""}
           onchange="toggleSelect('accounts','${acid}',this.checked)" />
-        <div class="account-num" style="background:${col}22;color:${col}">#${ac.number}</div>
+        <div class="account-num" style="background:${col}22;color:${col};font-size:11px;min-width:64px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${displayName}" id="acusername-${acid}">${displayName}</div>
         <div class="account-info">
           <div class="name">
             <span id="acreator-${acid}">${creatorName(ac.creatorId)}</span>
-            ${cl ? `<span class="tag" style="${tagStyle(col)};margin-left:6px">${cl.name}</span>` : ""}
+            <span class="tag" style="background:${acTypeLabel==='Main'?'#AF52DE22':'#007AFF15'};color:${acTypeLabel==='Main'?'#AF52DE':'var(--blue)'};border:1px solid ${acTypeLabel==='Main'?'#AF52DE44':'#007AFF33'};margin-left:4px;font-size:10px">${acTypeLabel}</span>
+            ${cl ? `<span class="tag" style="${tagStyle(col)};margin-left:4px">${cl.name}</span>` : ""}
           </div>
           <div class="meta">
-            <span id="actype-label-${acid}">${rt.label}</span> · ${rt.reels} reels ·
+            <span id="actype-label-${acid}">${rt.label}</span>${rt.reels > 0 ? ` · ${rt.reels} reels` : ''} ·
             <span style="color:var(--green);font-weight:700" id="acrate-${acid}">${fmt(rt.rate)}/wk</span>
             ${assignedEditor ? `· <strong>${assignedEditor.name}</strong>` : `· <span style="color:var(--orange)">Unassigned</span>`}
           </div>
         </div>
         <div class="row" style="gap:6px">
+          <button class="btn btn-secondary btn-sm" onclick="editAccountModal('${acid}')">Edit</button>
           <button class="btn btn-secondary btn-sm" onclick="assignModal('${acid}','${assignment ? assignment.editorId : ""}')">
             ${assignedEditor ? "Reassign" : "Assign"}
           </button>
@@ -1214,6 +1229,10 @@ function renderAccounts() {
     if (el) makeEditable(el, val => {
       set(`/creators/${ac.creatorId}/name`, val).then(() => toast("Creator name updated"));
     });
+    const un = document.getElementById("acusername-" + acid);
+    if (un) makeEditable(un, val => {
+      set(`/accounts/${acid}/username`, val).then(() => toast("Username updated"));
+    });
   });
 
   // Inline edit rate types
@@ -1242,10 +1261,6 @@ function addClusterModal() {
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="field"><label>Cluster Name</label><input type="text" id="m-cname" placeholder="e.g. Cluster C" /></div>
-    <div class="grid2">
-      <div class="field"><label>From Account #</label><input type="number" id="m-cstart" placeholder="1" /></div>
-      <div class="field"><label>To Account #</label><input type="number" id="m-cend" placeholder="10" /></div>
-    </div>
     <div class="field"><label>Colour</label>
       <div class="row"><input type="color" id="m-ccolor" value="#007AFF" style="width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px" />
         <span style="font-size:13px;color:var(--label)">Pick a colour for this cluster</span></div>
@@ -1256,11 +1271,9 @@ function addClusterModal() {
     </div>`,
     () => {
       const name  = document.getElementById("m-cname").value.trim();
-      const start = parseInt(document.getElementById("m-cstart").value);
-      const end   = parseInt(document.getElementById("m-cend").value);
       const color = document.getElementById("m-ccolor").value;
-      if (!name || isNaN(start) || isNaN(end)) return;
-      set(`/clusters/${uid()}`, { name, range: [start, end], color }).then(() => { toast("Cluster added"); closeModal(); });
+      if (!name) return;
+      set(`/clusters/${uid()}`, { name, color }).then(() => { toast("Cluster added"); closeModal(); });
     }
   );
 }
@@ -1279,10 +1292,6 @@ function editClusterModal(cid) {
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="field"><label>Cluster Name</label><input type="text" id="m-cname" value="${cl.name}" /></div>
-    <div class="grid2">
-      <div class="field"><label>From Account #</label><input type="number" id="m-cstart" value="${cl.range[0]}" /></div>
-      <div class="field"><label>To Account #</label><input type="number" id="m-cend" value="${cl.range[1]}" /></div>
-    </div>
     <div class="field"><label>Colour</label>
       <div class="row"><input type="color" id="m-ccolor" value="${cl.color}" style="width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px" />
         <span style="font-size:13px;color:var(--label)">Pick a colour for this cluster</span></div>
@@ -1293,11 +1302,9 @@ function editClusterModal(cid) {
     </div>`,
     () => {
       const name  = document.getElementById("m-cname").value.trim();
-      const start = parseInt(document.getElementById("m-cstart").value);
-      const end   = parseInt(document.getElementById("m-cend").value);
       const color = document.getElementById("m-ccolor").value;
-      if (!name || isNaN(start) || isNaN(end)) return;
-      DB.ref(`/clusters/${cid}`).update({ name, range: [start, end], color })
+      if (!name) return;
+      DB.ref(`/clusters/${cid}`).update({ name, color })
         .then(() => { toast("Cluster updated"); closeModal(); });
     }
   );
@@ -1305,18 +1312,44 @@ function editClusterModal(cid) {
 
 function addAccountModal() {
   const editorsOpts = Object.entries(state.editors).map(([id,e]) => `<option value="${id}">${e.name}</option>`).join("");
-  const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}">${t.label} — ${t.reels} reels · ${fmt(t.rate)}/wk</option>`).join("");
+  const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}">${t.label}${t.rate > 0 ? ' — ' + t.reels + ' reels · ' + fmt(t.rate) + '/wk' : ' — $0'}</option>`).join("");
   openModal(`
     <div class="modal-header">
       <span class="modal-title">Add Account</span>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="grid2">
-      <div class="field"><label>Account #</label><input type="number" id="m-anum" placeholder="6" /></div>
-      <div class="field"><label>Creator Name</label><input type="text" id="m-creator" placeholder="@brandname" /></div>
+      <div class="field">
+        <label>Username / Label</label>
+        <input type="text" id="m-username" placeholder="e.g. Account 1 or @handle" />
+      </div>
+      <div class="field">
+        <label>Creator / Model</label>
+        <input type="text" id="m-creator" placeholder="e.g. Yuna, Kiki" />
+      </div>
     </div>
-    <div class="field"><label>Account Type</label><select id="m-atype">${typeOpts}</select></div>
-    <div class="field"><label>Assign Editor (optional)</label>
+    <div class="grid2">
+      <div class="field">
+        <label>Account Type</label>
+        <select id="m-actype">
+          <option value="backup">Back-up</option>
+          <option value="main">Main</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Stage (Rate Tier)</label>
+        <select id="m-atype">${typeOpts}</select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Cluster</label>
+      <select id="m-acluster">
+        <option value="">Unassigned</option>
+        ${Object.entries(state.clusters).map(([cid,cl]) => `<option value="${cid}">${cl.name}</option>`).join("")}
+      </select>
+    </div>
+    <div class="field">
+      <label>Assign Editor (optional)</label>
       <select id="m-aeditor"><option value="">— Assign later —</option>${editorsOpts}</select>
     </div>
     <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">
@@ -1324,16 +1357,18 @@ function addAccountModal() {
       <button class="btn btn-primary" id="modal-submit">Add Account</button>
     </div>`,
     () => {
-      const num     = parseInt(document.getElementById("m-anum").value);
-      const creator = document.getElementById("m-creator").value.trim();
-      const type    = document.getElementById("m-atype").value;
-      const edId    = document.getElementById("m-aeditor").value;
-      if (!creator || isNaN(num)) return;
+      const username  = document.getElementById("m-username").value.trim();
+      const creator   = document.getElementById("m-creator").value.trim();
+      const acType    = document.getElementById("m-actype").value;
+      const stageType = document.getElementById("m-atype").value;
+      const clusterId = document.getElementById("m-acluster").value || null;
+      const edId      = document.getElementById("m-aeditor").value;
+      if (!username || !creator) return;
       let creatorId = Object.entries(state.creators).find(([,c]) => c.name.toLowerCase() === creator.toLowerCase())?.[0];
       const doCreate = cid => {
         const aid   = uid();
         const batch = {};
-        batch[`/accounts/${aid}`] = { number: num, creatorId: cid, type };
+        batch[`/accounts/${aid}`] = { username, creatorId: cid, type: stageType, accountType: acType, clusterId: clusterId || null };
         if (edId) batch[`/assignments/${uid()}`] = { editorId: edId, accountId: aid };
         DB.ref().update(batch).then(() => { toast("Account added"); closeModal(); });
       };
@@ -1342,6 +1377,87 @@ function addAccountModal() {
         creatorId = uid();
         set(`/creators/${creatorId}`, { name: creator }).then(() => doCreate(creatorId));
       }
+    }
+  );
+}
+
+function editAccountModal(acid) {
+  const ac = state.accounts[acid];
+  if (!ac) return;
+  const cr = state.creators[ac.creatorId] || {};
+  const editorsOpts = Object.entries(state.editors).map(([id,e]) => `<option value="${id}">${e.name}</option>`).join("");
+  const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}" ${t.id===ac.type?"selected":""}>${t.label}${t.rate > 0 ? ' — ' + t.reels + ' reels · ' + fmt(t.rate) + '/wk' : ' — $0'}</option>`).join("");
+  const assignment = Object.values(state.assignments).find(a => a.accountId === acid);
+  const currentEditorId = assignment ? assignment.editorId : "";
+  openModal(`
+    <div class="modal-header">
+      <span class="modal-title">Edit Account</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Username / Label</label>
+        <input type="text" id="m-username" value="${ac.username || ''}" placeholder="Account 1 or @handle" />
+      </div>
+      <div class="field">
+        <label>Creator / Model</label>
+        <input type="text" id="m-creator" value="${cr.name || ''}" placeholder="e.g. Yuna, Kiki" />
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Account Type</label>
+        <select id="m-actype">
+          <option value="backup" ${ac.accountType !== "main" ? "selected" : ""}>Back-up</option>
+          <option value="main"   ${ac.accountType === "main" ? "selected" : ""}>Main</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Stage (Rate Tier)</label>
+        <select id="m-atype">${typeOpts}</select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Cluster</label>
+      <select id="m-acluster">
+        <option value="">Unassigned</option>
+        ${Object.entries(state.clusters).map(([cid,cl]) => `<option value="${cid}" ${ac.clusterId===cid?"selected":""}>${cl.name}</option>`).join("")}
+      </select>
+    </div>
+    <div class="field">
+      <label>Assigned Editor</label>
+      <select id="m-aeditor"><option value="">— Unassigned —</option>${editorsOpts.replace(`value="${currentEditorId}"`, `value="${currentEditorId}" selected`)}</select>
+    </div>
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-submit">Save Changes</button>
+    </div>`,
+    async () => {
+      const username  = document.getElementById("m-username").value.trim();
+      const creator   = document.getElementById("m-creator").value.trim();
+      const acType    = document.getElementById("m-actype").value;
+      const stageType = document.getElementById("m-atype").value;
+      const clusterId = document.getElementById("m-acluster").value || null;
+      const edId      = document.getElementById("m-aeditor").value;
+      if (!username || !creator) return;
+
+      // Update creator name if changed
+      if (ac.creatorId && cr.name !== creator) {
+        await DB.ref(`/creators/${ac.creatorId}`).update({ name: creator });
+      } else if (!ac.creatorId) {
+        const newCreatorId = uid();
+        await DB.ref(`/creators/${newCreatorId}`).set({ name: creator });
+      }
+
+      await DB.ref(`/accounts/${acid}`).update({ username, accountType: acType, type: stageType, clusterId });
+
+      // Handle assignment
+      const batch = {};
+      if (assignment) batch[`/assignments/${assignment[0] || Object.entries(state.assignments).find(([,a])=>a.accountId===acid)?.[0]}`] = null;
+      if (edId) batch[`/assignments/${uid()}`] = { editorId: edId, accountId: acid };
+      if (Object.keys(batch).length) await DB.ref().update(batch);
+
+      toast("Account updated"); closeModal();
     }
   );
 }
@@ -1356,7 +1472,7 @@ function removeAccount(acid) {
 // ── Cluster Quick-Fill ────────────────────────────────────────────────────────
 function clusterQuickFillModal() {
   const editorsOpts = Object.entries(state.editors).map(([id,e]) => `<option value="${id}">${e.name}</option>`).join("");
-  const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}">${t.label} — ${t.reels} reels · ${fmt(t.rate)}/wk</option>`).join("");
+  const typeOpts = RATE_TYPES.map(t => `<option value="${t.id}">${t.label}${t.rate > 0 ? ' — ' + t.reels + ' reels · ' + fmt(t.rate) + '/wk' : ' — $0'}</option>`).join("");
   const existingClusters = Object.entries(state.clusters);
   const existingCreators = Object.entries(state.creators);
 
@@ -1378,27 +1494,40 @@ function clusterQuickFillModal() {
     <div class="grid2">
       <div class="field">
         <label>Cluster Name</label>
-        <input type="text" id="qf-cluster" placeholder="e.g. Cluster A Part 1" list="qf-cluster-list" oninput="qfUpdatePreview()" />
+        <input type="text" id="qf-cluster" placeholder="e.g. Cluster A" list="qf-cluster-list" oninput="qfUpdatePreview()" />
         <datalist id="qf-cluster-list">${existingClusters.map(([,cl]) => `<option value="${cl.name}">`).join('')}</datalist>
       </div>
       <div class="field">
-        <label>Creator Name</label>
-        <input type="text" id="qf-creator" placeholder="@brandname" list="qf-creator-list" oninput="qfUpdatePreview()" />
+        <label>Creator / Model</label>
+        <input type="text" id="qf-creator" placeholder="e.g. Yuna, Kiki" list="qf-creator-list" oninput="qfUpdatePreview()" />
         <datalist id="qf-creator-list">${existingCreators.map(([,c]) => `<option value="${c.name}">`).join('')}</datalist>
       </div>
     </div>
     <div class="grid2">
       <div class="field">
-        <label>Starting Account #</label>
+        <label>Username Label Prefix</label>
+        <input type="text" id="qf-prefix" placeholder="Account" value="Account" oninput="qfUpdatePreview()" />
+      </div>
+      <div class="field">
+        <label>Starting # (suffix)</label>
         <input type="number" id="qf-start" placeholder="1" min="1" oninput="qfUpdatePreview()" />
       </div>
+    </div>
+    <div class="grid2">
       <div class="field">
         <label>Number of Accounts</label>
         <input type="number" id="qf-count" placeholder="5" min="1" max="50" value="5" oninput="qfUpdatePreview()" />
       </div>
+      <div class="field">
+        <label>Account Type</label>
+        <select id="qf-actype" onchange="qfUpdatePreview()">
+          <option value="backup">Back-up</option>
+          <option value="main">Main</option>
+        </select>
+      </div>
     </div>
     <div class="field">
-      <label>Account Type (applies to all)</label>
+      <label>Stage / Rate Tier (applies to all)</label>
       <select id="qf-type" onchange="qfUpdatePreview()">${typeOpts}</select>
     </div>
     <div class="field">
@@ -1427,11 +1556,15 @@ function qfPickCluster(cid) {
   if (clusterEl) clusterEl.value = cl.name;
   if (colorEl) colorEl.value = cl.color;
 
-  // Find the next free account number after this cluster's existing accounts
-  const clusterAccountNums = Object.values(state.accounts)
-    .filter(ac => ac.clusterId ? ac.clusterId === cid : (ac.number >= cl.range[0] && ac.number <= cl.range[1]))
-    .map(ac => ac.number);
-  const maxExisting = clusterAccountNums.length ? Math.max(...clusterAccountNums, cl.range[1]) : cl.range[1];
+  // Find the next free account number within this cluster's accounts
+  const clusterAccounts = Object.values(state.accounts)
+    .filter(ac => ac.clusterId === cid);
+  // Try to find highest numeric suffix
+  const nums = clusterAccounts.map(ac => {
+    const m = (ac.username || "").match(/(\d+)$/);
+    return m ? parseInt(m[1]) : 0;
+  }).filter(n => n > 0);
+  const maxExisting = nums.length ? Math.max(...nums) : 0;
   const startEl = document.getElementById("qf-start");
   if (startEl && !startEl.value) startEl.value = maxExisting + 1;
 
@@ -1442,32 +1575,36 @@ function qfPickCluster(cid) {
 function qfUpdatePreview() {
   const clusterName = (document.getElementById("qf-cluster")?.value || "").trim();
   const creator     = (document.getElementById("qf-creator")?.value || "").trim();
+  const prefix      = (document.getElementById("qf-prefix")?.value || "Account").trim();
   const start       = parseInt(document.getElementById("qf-start")?.value) || 0;
   const count       = Math.min(parseInt(document.getElementById("qf-count")?.value) || 0, 50);
   const typeId      = document.getElementById("qf-type")?.value;
+  const acType      = document.getElementById("qf-actype")?.value || "backup";
   const rt          = rateType(typeId);
   const preview     = document.getElementById("qf-preview");
   if (!preview) return;
 
-  if (!start || !count || !creator || !clusterName) {
+  if (!count || !creator || !clusterName) {
     preview.innerHTML = `<div style="font-size:13px;color:var(--label);text-align:center;padding:16px 0;">Fill in all fields to see a live preview ↑</div>`;
     return;
   }
 
   const perAccount = rt.rate;
   const total      = perAccount * count;
+  const acTypeLabel = acType === "main" ? "Main" : "Back-up";
 
   let cardsHtml = "";
   for (let i = 0; i < count; i++) {
-    const num = start + i;
+    const num      = start ? (start + i) : (i + 1);
+    const username = start ? `${prefix} ${num}` : `${prefix} ${i+1}`;
     cardsHtml += `
       <div class="qf-account-preview qf-preview-card" style="animation-delay:${i * 0.04}s">
-        <div class="qf-num-badge" style="background:rgba(52,199,89,0.12);color:var(--green)">#${num}</div>
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:13px">${creator}</div>
-          <div style="font-size:12px;color:var(--label)">${rt.label} · ${rt.reels} reels · <span style="color:var(--green);font-weight:700">${fmt(rt.rate)}/wk</span></div>
+        <div class="qf-num-badge" style="background:rgba(52,199,89,0.12);color:var(--green);font-size:11px;white-space:nowrap">${username}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px">${creator} · <span style="font-weight:400;color:var(--label)">${acTypeLabel}</span></div>
+          <div style="font-size:12px;color:var(--label)">${rt.label}${rt.reels > 0 ? ' · ' + rt.reels + ' reels' : ''} · <span style="color:var(--green);font-weight:700">${fmt(rt.rate)}/wk</span></div>
         </div>
-        <span style="font-size:11px;font-weight:700;color:var(--label);background:rgba(52,199,89,0.1);padding:2px 8px;border-radius:20px">${clusterName}</span>
+        <span style="font-size:11px;font-weight:700;color:var(--label);background:rgba(52,199,89,0.1);padding:2px 8px;border-radius:20px;flex-shrink:0">${clusterName}</span>
       </div>`;
   }
 
@@ -1492,19 +1629,19 @@ function qfUpdatePreview() {
 async function qfSubmit() {
   const clusterName = (document.getElementById("qf-cluster")?.value || "").trim();
   const creator     = (document.getElementById("qf-creator")?.value || "").trim();
-  const start       = parseInt(document.getElementById("qf-start")?.value);
+  const prefix      = (document.getElementById("qf-prefix")?.value || "Account").trim();
+  const start       = parseInt(document.getElementById("qf-start")?.value) || 1;
   const count       = Math.min(parseInt(document.getElementById("qf-count")?.value) || 0, 50);
   const typeId      = document.getElementById("qf-type")?.value;
+  const acType      = document.getElementById("qf-actype")?.value || "backup";
   const edId        = document.getElementById("qf-editor")?.value || "";
 
-  if (!clusterName || !creator || isNaN(start) || count < 1) {
+  if (!clusterName || !creator || count < 1) {
     toast("Please fill in all required fields");
     return;
   }
 
   closeModal();
-
-  // Show creating progress toast
   toast(`Creating ${count} accounts…`, 6000);
 
   // Find or create creator
@@ -1514,30 +1651,23 @@ async function qfSubmit() {
     await DB.ref(`/creators/${creatorId}`).set({ name: creator });
   }
 
-  // Find or create cluster: use range start → start+count-1
-  const end = start + count - 1;
+  // Find or create cluster
   let clusterId = Object.entries(state.clusters).find(([,cl]) => cl.name.toLowerCase() === clusterName.toLowerCase())?.[0];
   if (!clusterId) {
     clusterId = uid();
-    const colors = ["#007AFF","#34C759","#FF9500","#AF52DE","#FF3B30","#32ADE6","#5856D6","#FF6B35"];
+    const colors = ["#007AFF","#34C759","#FF9500","#AF52DE","#FF3B30","#32ADE6","#5856D6","#FF6B35","#8E8E93","#30D158"];
     const usedColors = Object.values(state.clusters).map(c => c.color);
     const color = colors.find(c => !usedColors.includes(c)) || colors[Math.floor(Math.random() * colors.length)];
-    await DB.ref(`/clusters/${clusterId}`).set({ name: clusterName, range: [start, end], color });
-  } else {
-    // Align/extend the existing cluster's range to cover the new accounts too
-    const cl = state.clusters[clusterId];
-    const newRange = [Math.min(cl.range[0], start), Math.max(cl.range[1], end)];
-    if (newRange[0] !== cl.range[0] || newRange[1] !== cl.range[1]) {
-      await DB.ref(`/clusters/${clusterId}/range`).set(newRange);
-    }
+    await DB.ref(`/clusters/${clusterId}`).set({ name: clusterName, range: [start, start + count - 1], color });
   }
 
-  // Batch write all accounts + assignments (store clusterId so count is exact)
+  // Batch write all accounts + assignments
   const batch = {};
   for (let i = 0; i < count; i++) {
-    const num = start + i;
+    const num      = start + i;
+    const username = `${prefix} ${num}`;
     const aid = uid();
-    batch[`/accounts/${aid}`] = { number: num, creatorId, type: typeId, clusterId };
+    batch[`/accounts/${aid}`] = { username, creatorId, type: typeId, accountType: acType, clusterId };
     if (edId) batch[`/assignments/${uid()}`] = { editorId: edId, accountId: aid };
   }
 
@@ -1834,13 +1964,15 @@ function renderInvoices() {
       const cl  = clusterFor(ac.number, ac);
       const rt  = rateType(ac.type);
       const col = cl ? cl.color : "#8E8E93";
+      const displayName = ac.username || (ac.number ? `Account ${ac.number}` : "—");
+      const acTypeLabel = ac.accountType === "main" ? "Main" : "Back-up";
       acLines += `
         <div class="invoice-line" style="background:var(--bg)">
           <div class="row">
-            <span class="tag" style="${tagStyle(col)}">#${ac.number}</span>
+            <span class="tag" style="${tagStyle(col)};font-size:11px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${displayName}">${displayName}</span>
             <div>
-              <div style="font-weight:500;font-size:14px" id="inv-creator-${ac.number}-${eid}">${creatorName(ac.creatorId)}</div>
-              <div style="font-size:12px;color:var(--label)">${rt.label} · ${rt.reels} reels</div>
+              <div style="font-weight:500;font-size:14px">${creatorName(ac.creatorId)} <span style="font-size:11px;color:var(--label)">(${acTypeLabel})</span></div>
+              <div style="font-size:12px;color:var(--label)">${rt.label}${rt.reels > 0 ? ' · ' + rt.reels + ' reels' : ''}</div>
             </div>
           </div>
           <span style="font-weight:700;color:var(--green)">${fmt(rt.rate)}</span>
@@ -1947,7 +2079,7 @@ function generateInvoiceText(eid) {
   // Unique projects
   const projectNames = [...new Set(myAccounts.map(ac => creatorName(ac.creatorId)))];
 
-  // Group by type
+  // Group accounts by stage type for the ACCOUNT LIST section
   const typeGroups = {};
   myAccounts.forEach(ac => {
     const rt = rateType(ac.type);
